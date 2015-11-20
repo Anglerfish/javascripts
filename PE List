@@ -1,6 +1,6 @@
 var AegisProcess = new Array();
 var myQueryOptions = "<QueryOptions><ViewAttributes Scope='RecursiveAll' IncludeRootFolder='True' /></QueryOptions>";
-
+var originVals;
 
 function PEPriorizationList(){
 
@@ -31,6 +31,10 @@ loadScript("/jquery.SPServices-0.7.1a.min.js",function() {
 //  console.log('dynamic script SPServices loaded'); 
 });
 
+loadScript("/javascripts/editFormFields.js",function() {
+//  console.log('dynamic script SPServices loaded'); 
+});
+
 })();
 //End Dynamic load Javascript Library Ends
 
@@ -56,6 +60,9 @@ $("tr[id^='Routing_x0020_7'] td.ms-formbody").append("<button type='button' id=f
 //ckeditor for chrome/Firefox users
 if(!browseris.ie5up) $("textarea[id$='TextField']").attr("class","ckeditor");
 
+originVals = readFields();
+
+//get information from Aegis
 var jobNo = $("TR[ID^='Title'] TD:nth-child(2)").text();
 jobNo = jobNo.replace(/\s+/g,'');
 $.when(getAegisJob(jobNo)).done(function(jobRef) {
@@ -79,9 +86,7 @@ $("select[title^=Route]").change(function(){
 
 $("button#folderLabel").click(function(){folderLabel(jobNo)});
 
-$("select[title^=Route]").each(function(){
-  selectVal.push($(this).val());
-});
+$("select[title^=Route]").each(function(){ selectVal.push($(this).val()); });
 
 $("button#forceRouter").click(function(){
   var forceOK = confirm("ALERT!\nThis button should only be used to fix/update job progression WHEN SHAREPOINT DID NOT UPDATE JOB PROGRESSION PROPERLY. Press 'OK' to continue and 'Submit' entry after.");
@@ -93,10 +98,8 @@ $("button#forceRouter").click(function(){
   }
 }) //End forceRouter
 
-
 //provides information on the process locations that needs modifications.
 $("input.saveSubmit").click(function(){
-//$("input.testButton").click(function(){
 $("div.routeErr").remove();
 $("select[title^='Route']").each(function(){
   if($(this).val() != "TBD") {
@@ -107,48 +110,106 @@ $("select[title^='Route']").each(function(){
   }
 });
 
+var smtCheck = [false,false];
+//variable contains smtCheck Primary, smtCheck Secondary
+
 if($("div").hasClass("routeErr")) alert("Error. Duplicate entry in Router.");
 else {
   $("span#saveStatus").show().find("td#loadStatus").text("Updating");
   if($("Input[title='Folder Released']").val() != "") {
     var routerChange = new Array;
-    var smtSS = false;
-    var smtPS = false;
+    var smtPlacement = [false,false];
+    var smtNumber = new Array;
   
     $("select[title^=Route]").each(function(){
       temp1 = parseInt($(this).attr("title").slice(5),10);
-      if(selectVal[temp1 - 1] !=  $(this).val()) routerChange.push({routeNum:parseInt($(this).attr("title").slice(5),10),route:$(this).val()});
-      if($(this).val() == "SMT Oper SS") smtSS = true;
-      if($(this).val() == "SMT Oper PS") smtPS = true;
+      if(selectVal[temp1 - 1] !=  $(this).val()) routerChange.push({routeNum:temp1,route:$(this).val()});
+      if($(this).val() == "SMT Oper PS") smtPlacement[0] = true;
+      if($(this).val() == "SMT Oper SS") smtPlacement[1] = true;
     });
-
-    if(routerChange.length > 0) {
-      for( var i = 0, l = routerChange.length; i < l; i++ ) {
-        if (routerChange[i].routeNum != 1) {
-          temp1 = routerChange[i].routeNum - 1;
-          if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
-          else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
-        }
-        if (routerChange[i].route != "END") {
-          temp1 = routerChange[i].routeNum + 1;
-          if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
-          else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
-        }
-      }
-      $.when(routerSetup(jobNo, routerChange)).done(function(){
-        $("span#saveStatus td#loadStatus").text("Complete");
-        setTimeout(function(){
-          $("INPUT[ID$='diidIOSaveItem']").click();
-        },2000);
-      });
-    } else {
-      $("span#saveStatus td#loadStatus").text("Complete");
-      $("INPUT[ID$='diidIOSaveItem']").click();
+    
+    smtNumber[0] = $("input[title='SMT-PS Parts']").val();
+    smtNumber[1] = $("input[title='SMT-SS Parts']").val();
+    
+    if(smtPlacement[0] == true && smtNumber[0] > 0) smtCheck[0] = true;
+    else if(smtPlacement[0] == false) { 
+      if(smtNumber[0] != 0) smtNumber[0] = 0;
+      smtCheck[0] = true;
     }
-  } else{
+    if(smtPlacement[1] == true && smtNumber[1] > 0) smtCheck[1] = true;
+    else if(smtPlacement[1] == false) { 
+      if(smtNumber[1] != 0) smtNumber[1] = 0;
+      smtCheck[1] = true;
+    }
+    if(smtCheck[0] == false || smtCheck[1] == false) {
+      if($("td#aegisSMTpart").length) {
+        temp1 = parseInt($("td#aegisSMTpart").text(),10);
+        if(smtCheck[0] == false && smtCheck[1] == false) smtNumber = [Math.floor(temp1/2),Math.ceil(temp1/2)];
+        else if(smtCheck[0] == false) smtNumber[0] = temp1 - smtNumber[1];
+        else if(smtCheck[1] == false) smtNumber[1] = temp1 - smtNumber[0];
+        if(smtNumber[0] < 0 || smtNumber[1] < 0) smtNumber = [Math.floor(temp1/2),Math.ceil(temp1/2)];
+        if(confirm("'SMT-SS Parts' and/or 'SMT-PS Parts' cannot be less than or equal to 0. \nUpdate to the following estimates, as per Aegis BOM? \nSMT-SS Parts: " + smtNumber[1] + "\nSMT-PS Parts: " + smtNumber[0])) {
+          $("input[title='SMT-PS Parts']").val(smtNumber[0]);
+          $("input[title='SMT-SS Parts']").val(smtNumber[1]);
+          smtCheck = [true, true];
+        }
+      } else {
+        if(smtCheck[0] == false && smtCheck[1] == false) alert("Cannot have 0 or less for both 'SMT-SS Parts' and 'SMT-PS Parts' when SMT-SS and SMT-PS are both on the router.\nPlease update 'SMT-SS Parts' and 'SMT-PS Parts' to proceed.");
+        else if(smtCheck[0] == false) alert("Cannot have 0 or less for 'SMT-PS Parts' when SMT-PS is on the router.\nPlease update 'SMT-PS Parts' to proceed.");
+        else if(smtCheck[1] == false) alert("Cannot have 0 or less for 'SMT-SS Parts' when SMT-SS is on the router.\nPlease update 'SMT-SS Parts' to proceed.");
+      }
+    } else {
+      $("input[title='SMT-PS Parts']").val(smtNumber[0]);
+      $("input[title='SMT-SS Parts']").val(smtNumber[1]);
+    }
+
+    if(smtCheck[0] = true && smtCheck[1]== true) {
+      if(routerChange.length > 0) {
+        for( var i = 0, l = routerChange.length; i < l; i++ ) {
+          if (routerChange[i].routeNum != 1) {
+            temp1 = routerChange[i].routeNum - 1;
+            if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
+            else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
+          }
+          if (routerChange[i].route != "END") {
+            temp1 = routerChange[i].routeNum + 1;
+            if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
+            else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
+          }
+        }    
+
+        $.when(routerSetup(jobNo, routerChange)).done(function(){
+          $("span#saveStatus td#loadStatus").text("Complete");
+          setTimeout(function(){
+            $("INPUT[ID$='diidIOSaveItem']").click();
+          },2000);
+        });
+      } else { //No router change. Saving.
+        $.when(getMasterJobInfo(jobNo)).done(function(masterData) {
+          var deferreds = [];
+          var changesSMT = new Array();
+          var jobVals = readFields();
+
+          if(typeof $(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_T") != "undefined") {
+            if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_T"),10) != jobVals.SMT_x002d_PS) changesSMT.push(["SMT_x002d_T",jobVals.SMT_x002d_PS]);
+          }
+          if(typeof $(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B") != "undefined") {
+            if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B"),10) != jobVals.SMT_x002d_SS) changesSMT.push(["SMT_x002d_B",jobVals.SMT_x002d_SS]);
+          }
+
+          if (changesSMT.length > 0) deferreds.push(updateMasterJobList($(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
+          $.when.apply($,deferreds).done(function(){
+            $("span#saveStatus td#loadStatus").text("Complete");
+            $("INPUT[ID$='diidIOSaveItem']").click();
+          });
+        });        
+      }
+    } else $("span#saveStatus").hide(); //SMT incorrect. Stops user from saving.
+  } else{  //folder not released
     $("span#saveStatus td#loadStatus").text("Complete");
     $("INPUT[ID$='diidIOSaveItem']").click();
   }
+  
 }  
 }); //End click saveSubmit
 
@@ -166,11 +227,8 @@ jQuery.ajax({
   async: true,
   success:function(data){
     labelstring = "<table class=labelTable><tr><td id=labelJobNo>&nbsp;JOB#: " + jobNo + "</td></tr></table>"
-//                + "<div id=labelspace1>&nbsp;</div>"
                 + "<table class=labelTable><tr><td id=labelCustName>&nbsp;&nbsp;&nbsp;" + $(data).find(".E2customer").text() + "</td><td id=labelOrderType>" + $(data).find(".E2order_type").text() + "</td></tr></table>"
-//                + "<div id=labelspace2>&nbsp;</div>" 
                 + "<table class=labelTable><tr><td id=labelAssy>&nbsp;&nbsp;&nbsp;&nbsp;" + $(data).find(".E2dorigo_assy_id").text().trim() + "</td><td id=labelDescrip> " + $(data).find(".E2description").text() + "</td></tr></table>";
-//   $("button#folderLabel").hide().after(labelstring);
 
       labelstring = "<head><link rel='stylesheet' type='text/css' href='/javascripts/PE Prioritization List-edit.css'></head><body>"
                         + labelstring + "</body>";
@@ -212,7 +270,6 @@ jQuery.ajax({
       async: true,
       success:function(data3){
         $(data3).find("tr.BOMlist").each(function(e){
- //         if(e == 1) alert($(this).find("td.populationtype").text().substring(0,2));
           temp1 = $(this).find("td.populationtype").text();
           if(temp1.substring(0,3) == "SMT") SMTpart += parseInt($(this).find("td.quantity").text(),10);
           else if(temp1.substring(0,2) == "TH") THpart += parseInt($(this).find("td.quantity").text(),10);
@@ -230,7 +287,6 @@ jQuery.ajax({
 
 
 function getAegisRouter(jobRef){
-//var jobURL = "/AJAX/AegisProcess.aspx?Job=" + jobNo;
 var errorFlag = 0;
 var AegisProcessID = new Array();
 
@@ -500,9 +556,20 @@ function routerSetup(jobNo, routerChange) {
   alert(temp9);
 */
 $.when(getMasterJobInfo(jobNo)).done(function(masterData) {
-  
+  var changesSMT = new Array();
+  var jobVals = readFields();
+
+  if(typeof $(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_T") != "undefined") {
+    if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_T"),10) != jobVals.SMT_x002d_PS) changesSMT.push(["SMT_x002d_T",jobVals.SMT_x002d_PS]);
+  }
+  if(typeof $(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B") != "undefined") {
+    if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B"),10) != jobVals.SMT_x002d_SS) changesSMT.push(["SMT_x002d_B",jobVals.SMT_x002d_SS]);
+  }
+
+  if (changesSMT.length > 0) deferreds.push(updateMasterJobList($(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
+
   for(var i = 0, l = routerChange.length; i < l; i++) {
-    deferreds.push(addUpdateRouter(i,l,masterData));
+    deferreds.push(addUpdateRouter(i,l,masterData,jobVals));
   }
   
   $.when.apply($,deferreds).done(function(){
@@ -515,10 +582,10 @@ $.when(getMasterJobInfo(jobNo)).done(function(masterData) {
 return dfd.promise();
 
 //Internal function. Use after routerSetup. Forms the update query and then activate the query through SPServices
-function addUpdateRouter(i,l,masterData) {
+function addUpdateRouter(i,l,masterData,jobVals) {
   var dfd = $.Deferred();
   var listTitle = code2List(routerChange[i].route);
-  var pairVal = getMasterSQL(listTitle,masterData);
+  var pairVal = getMasterSQL(listTitle,masterData,jobVals);
   var pairID;
 
   if (routerChange[i].routeNum == 1) pairVal.push(["Qty_x0020_In",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Qty")]);
@@ -530,7 +597,7 @@ function addUpdateRouter(i,l,masterData) {
       if(listTitle == "SMT Operation PS Schedule") pairVal.push(["NExt_x0020_Proc",routerChange[i+1].route]);
       else pairVal.push(["Next_x0020_Proc",routerChange[i+1].route]);
     }
-  }  
+  }
   
   $().SPServices({
     operation: "GetListItems",
@@ -580,14 +647,32 @@ function addUpdateRouter(i,l,masterData) {
     
   });
 
-
-//Kill this when we are actually running////////////////////////////////////////////////////////////////////////////////
-//dfd.resolve("updated" + listTitle);
-
 return dfd.promise();
 } //End Internal Function addUpdateRouter
 
 }; //End router Setup
+
+function updateMasterJobList(mjlID,changes) {
+var dfd = $.Deferred();
+
+$().SPServices({
+  operation: "UpdateListItems",
+  async: true,
+  batchCmd: "Update",
+  ID: mjlID,
+  listName: "Master Job List",
+  valuepairs: changes,
+  completefunc: function(xData, Status) {
+    var temp1 = $(xData.responseXML).SPFilterNode("ErrorText").text();
+    if( typeof(temp1) != "undefined") {
+      if(temp1.length > 0) alert(listTitle + "::" + temp1); 
+    }
+    dfd.resolve();
+  }
+});
+
+return dfd.promise();
+} //End function updateMasterJobList
 
 function code2List(codeName) {
 var listTitle = "";
@@ -644,27 +729,27 @@ return dfd.promise();
 
 };
 
-function getMasterSQL(num,masterData){
+function getMasterSQL(num,masterData,jobVals){
 
 var temp1;
 var routePropVal = new Array();
 switch (num)
 {
+  case "SMT Operation PS Schedule":
+           routePropVal.push(["SMT_x002d_T",jobVals.SMT_x002d_PS]);
+           break;
+  case "SMT Operation SS Schedule":
+           routePropVal.push(["SMT_x002d_B",jobVals.SMT_x002d_SS]);
+           break;
   case "HS Operation 1 Schedule":
            routePropVal.push(["HS1_x0020_Pins",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Hand_x0020_Pins")]);
            routePropVal.push(["Ref_x0020_Time",Math.round($(masterData.responseXML).SPFilterNode("z:row").attr("ows_Hand_x0020_Pins")*0.25)]);
            break;
-  
   case "Shipment Authorization": 
            routePropVal.push(["Dorigo_x0020_Assy_x0020_ID",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assy_x0023_")]);
            routePropVal.push(["Target_x0020_Ship_x0020_Date",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_SO_x0020_Due")]);
            routePropVal.push(["Stock_x003f_",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Job_x0020_Type")]);
            break;
-/*
-  case "PE Prioritization List": routePropVal.push("PE Prioritization List");
-           routePropVal.push(["Assy_x0023_",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assy_x0023_")]);
-           break;
-*/           
   case "Open Jobs Progression": 
            routePropVal.push(["Dorigo_x0020_Assy_x0020_ID",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assy_x0023_")]);
            break;
