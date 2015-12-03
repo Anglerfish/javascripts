@@ -185,7 +185,7 @@ else {
           },2000);
         });
       } else { //No router change. Saving.
-        $.when(getMasterJobInfo(jobNo)).done(function(masterData) {
+        $.when(getSPList("Master Job List",jobNo)).done(function(masterData) {
           var deferreds = [];
           var changesSMT = new Array();
           var jobVals = readFields();
@@ -197,7 +197,7 @@ else {
             if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B"),10) != jobVals.SMT_x002d_SS) changesSMT.push(["SMT_x002d_B",jobVals.SMT_x002d_SS]);
           }
 
-          if (changesSMT.length > 0) deferreds.push(updateMasterJobList($(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
+          if (changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
           $.when.apply($,deferreds).done(function(){
             $("span#saveStatus td#loadStatus").text("Saving...");
             $("INPUT[ID$='diidIOSaveItem']").click();
@@ -555,7 +555,7 @@ function routerSetup(jobNo, routerChange) {
   }
   alert(temp9);
 */
-$.when(getMasterJobInfo(jobNo)).done(function(masterData) {
+$.when(getSPList("Master Job List",jobNo)).done(function(masterData) {
   var changesSMT = new Array();
   var jobVals = readFields();
 
@@ -566,7 +566,7 @@ $.when(getMasterJobInfo(jobNo)).done(function(masterData) {
     if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B"),10) != jobVals.SMT_x002d_SS) changesSMT.push(["SMT_x002d_B",jobVals.SMT_x002d_SS]);
   }
 
-  if (changesSMT.length > 0) deferreds.push(updateMasterJobList($(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
+  if (changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
 
   for(var i = 0, l = routerChange.length; i < l; i++) {
     deferreds.push(addUpdateRouter(i,l,masterData,jobVals));
@@ -652,15 +652,15 @@ return dfd.promise();
 
 }; //End router Setup
 
-function updateMasterJobList(mjlID,changes) {
+function updateSPList(listName,splID,changes) {
 var dfd = $.Deferred();
 
 $().SPServices({
   operation: "UpdateListItems",
   async: true,
   batchCmd: "Update",
-  ID: mjlID,
-  listName: "Master Job List",
+  ID: splID,
+  listName: listName,
   valuepairs: changes,
   completefunc: function(xData, Status) {
     var temp1 = $(xData.responseXML).SPFilterNode("ErrorText").text();
@@ -672,7 +672,27 @@ $().SPServices({
 });
 
 return dfd.promise();
-} //End function updateMasterJobList
+} //End function updateSPList
+
+function getSPList(listName,jobNo) {
+var myQuery = "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>";
+var dfd = $.Deferred();
+
+$().SPServices({
+  operation: "GetListItems",
+  async: true,
+  listName: listName,
+  CAMLViewFields: "<ViewFields Properties = 'True' />",
+  CAMLRowLimit: 1,
+  CAMLQueryOptions: myQueryOptions,
+  CAMLQuery: myQuery,
+  completefunc: function (xData, Status) {
+    dfd.resolve(xData);
+  }
+});
+return dfd.promise();
+
+}; //End getSPList
 
 function code2List(codeName) {
 var listTitle = "";
@@ -708,26 +728,6 @@ switch (codeName)
 }
 return listTitle;
 }; //End code2List
-
-function getMasterJobInfo(jobNo) {
-var myQuery = "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>";
-var dfd = $.Deferred();
-
-$().SPServices({
-  operation: "GetListItems",
-  async: true,
-  listName: "Master Job List",
-  CAMLViewFields: "<ViewFields Properties = 'True' />",
-  CAMLRowLimit: 1,
-  CAMLQueryOptions: myQueryOptions,
-  CAMLQuery: myQuery,
-  completefunc: function (xData, Status) {
-    dfd.resolve(xData);
-  }
-});
-return dfd.promise();
-
-};
 
 function getMasterSQL(num,masterData,jobVals){
 
