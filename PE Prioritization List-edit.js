@@ -163,7 +163,7 @@ else {
       $("input[title='SMT-SS Parts']").val(smtNumber[1]);
     }
 
-    if(smtCheck[0] = true && smtCheck[1]== true) {
+    if(smtCheck[0] == true && smtCheck[1]== true) {
       if(routerChange.length > 0) {
         for( var i = 0, l = routerChange.length; i < l; i++ ) {
           if (routerChange[i].routeNum != 1) {
@@ -179,7 +179,7 @@ else {
         }    
 
         $.when(routerSetup(jobNo, routerChange)).done(function(){
-          $("span#saveStatus td#loadStatus").text("Complete");
+          $("span#saveStatus td#loadStatus").text("Saving...");
           setTimeout(function(){
             $("INPUT[ID$='diidIOSaveItem']").click();
           },2000);
@@ -199,14 +199,14 @@ else {
 
           if (changesSMT.length > 0) deferreds.push(updateMasterJobList($(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
           $.when.apply($,deferreds).done(function(){
-            $("span#saveStatus td#loadStatus").text("Complete");
+            $("span#saveStatus td#loadStatus").text("Saving...");
             $("INPUT[ID$='diidIOSaveItem']").click();
           });
         });        
       }
     } else $("span#saveStatus").hide(); //SMT incorrect. Stops user from saving.
   } else{  //folder not released
-    $("span#saveStatus td#loadStatus").text("Complete");
+    $("span#saveStatus td#loadStatus").text("Saving...");
     $("INPUT[ID$='diidIOSaveItem']").click();
   }
   
