@@ -176,7 +176,7 @@ else {
             if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
             else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
           }
-        }    
+        }
 
         $.when(routerSetup(jobNo, routerChange)).done(function(){
           $("span#saveStatus td#loadStatus").text("Saving...");
@@ -555,7 +555,8 @@ function routerSetup(jobNo, routerChange) {
   }
   alert(temp9);
 */
-$.when(getSPList("Master Job List",jobNo)).done(function(masterData) {
+
+$.when(getSPList("Master Job List",jobNo),getSPList("SMT-Program Schedule",jobNo)).done(function(masterData, spsData) {
   var changesSMT = new Array();
   var jobVals = readFields();
 
@@ -567,7 +568,8 @@ $.when(getSPList("Master Job List",jobNo)).done(function(masterData) {
   }
 
   if (changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
-
+  deferreds.push(updateSPList("SMT-Program Schedule",$(spData.responseXML).SPFilterNode("z:row").attr("ows_ID"),[["Next_x0020_Proc",jobVals.Routing_x0020_1],["Next_x0020_Next_x0020_Proc",jobVals.Routing_x0020_2]]));
+  
   for(var i = 0, l = routerChange.length; i < l; i++) {
     deferreds.push(addUpdateRouter(i,l,masterData,jobVals));
   }
