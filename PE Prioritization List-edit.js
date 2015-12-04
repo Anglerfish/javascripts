@@ -567,8 +567,8 @@ $.when(getSPList("Master Job List",jobNo),getSPList("SMT-Program Schedule",jobNo
     if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B"),10) != jobVals.SMT_x002d_SS) changesSMT.push(["SMT_x002d_B",jobVals.SMT_x002d_SS]);
   }
 
-  if (changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
-  deferreds.push(updateSPList("SMT-Program Schedule",$(spsData.responseXML).SPFilterNode("z:row").attr("ows_ID"),[["Next_x0020_Proc",jobVals.Routing_x0020_1],["Next_x0020_Next_x0020_Proc",jobVals.Routing_x0020_2]]));
+  if(changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
+  if(typeof $(spsData.responseXML).SPFilterNode("z:row").attr("ows_ID") != "undefined") deferreds.push(updateSPList("SMT-Program Schedule",$(spsData.responseXML).SPFilterNode("z:row").attr("ows_ID"),[["Next_x0020_Proc",jobVals.Routing_x0020_1],["Next_x0020_Next_x0020_Proc",jobVals.Routing_x0020_2]]));
   
   for(var i = 0, l = routerChange.length; i < l; i++) {
     deferreds.push(addUpdateRouter(i,l,masterData,jobVals));
