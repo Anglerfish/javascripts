@@ -568,7 +568,7 @@ $.when(getSPList("Master Job List",jobNo),getSPList("SMT-Program Schedule",jobNo
   }
 
   if (changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
-  deferreds.push(updateSPList("SMT-Program Schedule",$(spData.responseXML).SPFilterNode("z:row").attr("ows_ID"),[["Next_x0020_Proc",jobVals.Routing_x0020_1],["Next_x0020_Next_x0020_Proc",jobVals.Routing_x0020_2]]));
+  deferreds.push(updateSPList("SMT-Program Schedule",$(spsData.responseXML).SPFilterNode("z:row").attr("ows_ID"),[["Next_x0020_Proc",jobVals.Routing_x0020_1],["Next_x0020_Next_x0020_Proc",jobVals.Routing_x0020_2]]));
   
   for(var i = 0, l = routerChange.length; i < l; i++) {
     deferreds.push(addUpdateRouter(i,l,masterData,jobVals));
