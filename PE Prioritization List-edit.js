@@ -4,6 +4,9 @@ var originVals;
 
 function PEPriorizationList(){
 
+alert("what is going on?");
+alert("This is more test?");
+
 //Dynamic load Javascript Library function
 (function(){
 function loadScript(url, callback) {
