@@ -4,8 +4,6 @@ var originVals;
 
 function PEPriorizationList(){
 
-alert("change change change");
-
 //Dynamic load Javascript Library function
 (function(){
 function loadScript(url, callback) {
