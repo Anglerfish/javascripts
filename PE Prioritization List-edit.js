@@ -4,9 +4,6 @@ var originVals;
 
 function PEPriorizationList(){
 
-alert("what is going on?");
-alert("This is more test?");
-
 //Dynamic load Javascript Library function
 (function(){
 function loadScript(url, callback) {
@@ -97,7 +94,7 @@ $("button#forceRouter").click(function(){
     for(var i = 0, l = selectVal.length; i < l; i++ ){
       selectVal[i] = "TBD";
     }
-    $("input.saveSubmit").click();
+    $("input.saveSubmit:first").click();
   }
 }) //End forceRouter
 
@@ -550,7 +547,6 @@ function routerSetup(jobNo, routerChange) {
       temp2--;
     }
   }    
-
 /*////////////////////////////////
   var temp9 = "";
   for(var i = 0, l = routerChange.length; i < l; i ++) {
@@ -571,14 +567,29 @@ $.when(getSPList("Master Job List",jobNo),getSPList("SMT-Program Schedule",jobNo
   }
 
   if(changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
-  if(typeof $(spsData.responseXML).SPFilterNode("z:row").attr("ows_ID") != "undefined") deferreds.push(updateSPList("SMT-Program Schedule",$(spsData.responseXML).SPFilterNode("z:row").attr("ows_ID"),[["Next_x0020_Proc",jobVals.Routing_x0020_1],["Next_x0020_Next_x0020_Proc",jobVals.Routing_x0020_2]]));
+  if(typeof $(spsData.responseXML).SPFilterNode("z:row").attr("ows_ID") != "undefined") {
+    deferreds.push(updateSPList("SMT-Program Schedule",$(spsData.responseXML).SPFilterNode("z:row").attr("ows_ID"),[["Next_x0020_Proc",jobVals.Routing_x0020_1],["Next_x0020_Next_x0020_Proc",jobVals.Routing_x0020_2]]));
+  } else if(jobVals.SMT_x002d_PS > 0 || jobVals.SMT_x002d_SS > 0) {
+    var mjl2sp = [["Title",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Title")],
+                  ["Description",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Description")],
+                  ["Dorigo_x0020_Assy_x0023_",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assy_x0023_")],
+                  ["Qty",parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_Qty"),10)],
+                  ["T_x002f_CONS",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_T_x002f_CONS")],
+                  ["SO_x0020_Due",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_SO_x0020_Due")],
+                  ["Master_x0020_Comments",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Comments_x002d_SMT")],
+                  ["Last_x0020_Job_x0020_No_x002e__x",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Last_x0020_Job_x0020_No_x002e__x")],
+                  ["Orange",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Orange")],
+                  ["Flux_x0020_Type",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Flux_x0020_Type")],
+                  ["Assy_x0020_Type",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Assy_x0020_Type")],
+                  ["Customer",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Customer")]];
+    deferreds.push(createSPList("SMT-Program Schedule",mjl2sp));
+  }
   
   for(var i = 0, l = routerChange.length; i < l; i++) {
     deferreds.push(addUpdateRouter(i,l,masterData,jobVals));
   }
   
   $.when.apply($,deferreds).done(function(){
-
     dfd.resolve();
   });
 
@@ -670,7 +681,7 @@ $().SPServices({
   completefunc: function(xData, Status) {
     var temp1 = $(xData.responseXML).SPFilterNode("ErrorText").text();
     if( typeof(temp1) != "undefined") {
-      if(temp1.length > 0) alert(listTitle + "::" + temp1); 
+      if(temp1.length > 0) alert(listName + "::" + temp1); 
     }
     dfd.resolve();
   }
@@ -678,6 +689,27 @@ $().SPServices({
 
 return dfd.promise();
 } //End function updateSPList
+
+function createSPList(listName,changes) {
+var dfd = $.Deferred();
+
+$().SPServices({
+  operation: "UpdateListItems",
+  async: true,
+  batchCmd: "New",
+  listName: listName,
+  valuepairs: changes,
+  completefunc: function(xData, Status) {
+    var temp1 = $(xData.responseXML).SPFilterNode("ErrorText").text();
+    if( typeof(temp1) != "undefined") {
+      if(temp1.length > 0) alert(listName + "::" + temp1); 
+    }
+    dfd.resolve();
+  }
+});
+
+return dfd.promise();
+} //End function createSPList
 
 function getSPList(listName,jobNo) {
 var myQuery = "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>";
