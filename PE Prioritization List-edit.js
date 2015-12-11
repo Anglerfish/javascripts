@@ -380,7 +380,7 @@ function PopulateSteps(){
         break;
       case "PTH Inspection Post Wavesolder / Selective Solder":
         $("select[title='Route " + temp3 + "']").css("background-color","red").val("PTH Insp Wave");
-        temp2++;	
+        temp2++;
         break;
       case "Handsolder Insertion / Solder 1":
         $("select[title='Route " + temp3 + "']").css("background-color","orange").val("HS Oper 1");
