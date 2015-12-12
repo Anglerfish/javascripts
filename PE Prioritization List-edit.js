@@ -181,7 +181,7 @@ else {
         $.when(routerSetup(jobNo, routerChange)).done(function(){
           $("span#saveStatus td#loadStatus").text("Saving...");
           setTimeout(function(){
-            $("INPUT[ID$='diidIOSaveItem']").click();
+            $("INPUT[ID$='diidIOSaveItem']:first").click();
           },2000);
         });
       } else { //No router change. Saving.
@@ -200,14 +200,14 @@ else {
           if (changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
           $.when.apply($,deferreds).done(function(){
             $("span#saveStatus td#loadStatus").text("Saving...");
-            $("INPUT[ID$='diidIOSaveItem']").click();
+            $("INPUT[ID$='diidIOSaveItem']:first").click();
           });
         });        
       }
     } else $("span#saveStatus").hide(); //SMT incorrect. Stops user from saving.
   } else{  //folder not released
     $("span#saveStatus td#loadStatus").text("Saving...");
-    $("INPUT[ID$='diidIOSaveItem']").click();
+    $("INPUT[ID$='diidIOSaveItem']:first").click();
   }
   
 }  
