@@ -7,7 +7,7 @@ $(document).ready(function(){
   
 //Temporary button for testing ONLY  
   
-  $("INPUT[ID$='diidIOSaveItem']").hide().parent().prepend("<input type='button' class='ms-ButtonHeightWidth loadSubmit' value='Submit'>");
+//  $("INPUT[ID$='diidIOSaveItem']").hide().parent().prepend("<input type='button' class='ms-ButtonHeightWidth loadSubmit' value='Submit'>");
   
   $("INPUT[ID$='diidIOGoBack']").parent().append("<input type='button' class='ms-ButtonHeightWidth testSubmit' value='Do Not Click!'>");
   
