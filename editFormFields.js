@@ -11,7 +11,7 @@ $("table.ms-formtable>tbody>tr").each(function(){
     var temp = findfield("FieldType",$(this).find("td:nth-child(2)").html());
     switch (temp) {
       case "SPFieldText":
-        result = $(this).find("input").val();
+        result = $(this).find("input").val().replace(/[^\x20-\x7E]+/g, "");
       break;
       case "SPFieldNumber":
         result = $(this).find("input").val();
@@ -21,7 +21,7 @@ $("table.ms-formtable>tbody>tr").each(function(){
         if(browseris.ie5up && $("textarea[Title='"+fieldName+"']").closest("span").find("iframe[Title='Rich Text Editor']").length) {
             result = escapeHTML($("textarea[Title='"+fieldName+"']").closest("span").find("iframe[Title='Rich Text Editor']").contents().find("body").html());
         } else result = escapeHTML($("textarea[title='"+fieldName+"']").val());
-
+        result = result.replace(/[^\x20-\x7E]+/g,"");
       break;
       case "SPFieldUser":
         result = $(this).find("input").val();
@@ -31,6 +31,7 @@ $("table.ms-formtable>tbody>tr").each(function(){
       break;
       case "SPFieldDateTime":
         result = $(this).find("input").val();
+        // Add time if available
         var temp1 = $(this).find("select[id$='DateTimeField_DateTimeFieldDateHours']").val();
         if(typeof(temp1) != "undefined") {
           if(temp1.substring(temp1.length-2,temp1.length) == "PM") temp1 = parseInt(temp1.substring(0, temp1.length-3),10) + 12;
