@@ -397,7 +397,7 @@ switch (listName)
   case "PTH Wave Schedule": OJPName = "_x0032_nd_x002d_Solder"; break;
   case "PTH Select Schedule": OJPName = "_x0032_nd_x002d_Mech"; break;
   case "PTH Select Inspection Schedule": OJPName = "QC_x002d_Mech"; break;
-  case "PTH Wave Inspection Schedule": OJPName = "_x0032_nd_x002d_Solder"; break;
+  case "PTH Wave Inspection Schedule": OJPName = "QC_x002d_2nd"; break;
   case "HS Operation 1 Schedule": OJPName = "Test_x002d_1"; break;
   case "HS Operation 2 Schedule": OJPName = "_x0032_nd_x002d_Solder2"; break;
   case "HS Operation 3 Schedule": OJPName = "_x0032_nd_x002d_Solder3"; break;
