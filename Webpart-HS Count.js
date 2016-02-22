@@ -129,14 +129,20 @@ numcheck = /(\/)|(\d)/;
 return numcheck.test(keychar);
 }//End GotoItemNo
 
+//Private function to convert date variable to Sharepoint date input. Remove date information
 function SPdateConverter( n ) {
   var SPdate = "";
   var d = new Date(n);
-  var offset = d.getTimezoneOffset()/60;
     if ( Object.prototype.toString.call(d) === "[object Date]" ) {
       if (!isNaN(d.getTime())) {
-        d = d.setHours(d.getHours()-offset);
+        d = d.setHours(d.getHours()- d.getTimezoneOffset()/60);
         d = new Date(d);
+        if(d.getUTCFullYear() < 1980) {
+            var todayDate = new Date();
+            var tempYear = d.getUTCFullYear();
+            while( tempYear > 100) {tempYear -= 100;}
+            d.setUTCFullYear(parseInt((todayDate.getUTCFullYear()/100),10)*100 + tempYear);
+        }
         SPdate = d.getUTCFullYear() + '-' +
         pad( d.getUTCMonth() +1 ) + '-' +
         pad( d.getUTCDate() ) + 'T' + 

@@ -56,31 +56,35 @@ return output;
   return temp1!== 1?htmlText.substring((temp1 + fieldName.length + 2),(htmlText.indexOf('"',temp1 + fieldName.length + 3))):temp1;
   }
 
-  //Private function to convert date variable to Sharepoint date input
+//Private function to convert date variable to Sharepoint date input. Remove date information
   function SPdateConverter( n ) {
     var SPdate = "";
     var d = new Date(n);
-    var offset = d.getTimezoneOffset()/60;
-      if ( Object.prototype.toString.call(d) === "[object Date]" ) {
-        if (!isNaN(d.getTime())) {
-          d = d.setHours(d.getHours()-offset);
-          d = new Date(d);
-          SPdate = d.getUTCFullYear() + '-' +
-          pad( d.getUTCMonth() +1 ) + '-' +
-          pad( d.getUTCDate() ) + 'T' + 
-          pad( d.getUTCHours() ) +':' + 
-          pad( d.getUTCMinutes() )+':' + 
-          pad( d.getUTCSeconds() )+'Z';
+    if ( Object.prototype.toString.call(d) === "[object Date]" ) {
+      if (!isNaN(d.getTime())) {
+        d = d.setHours(d.getHours()- d.getTimezoneOffset()/60);
+        d = new Date(d);
+        if(d.getUTCFullYear() < 1980) {
+          var todayDate = new Date();
+          var tempYear = d.getUTCFullYear();
+          while( tempYear > 100) {tempYear -= 100;}
+          d.setUTCFullYear(parseInt((todayDate.getUTCFullYear()/100),10)*100 + tempYear);
         }
+        SPdate = d.getUTCFullYear() + '-' +
+        pad( d.getUTCMonth() +1 ) + '-' +
+        pad( d.getUTCDate() ) + 'T' + 
+        pad( d.getUTCHours() ) +':' + 
+        pad( d.getUTCMinutes() )+':' + 
+        pad( d.getUTCSeconds() )+'Z';
       }
-      function pad( n ) { return n < 10 ? '0' + n : n; }
+    }
+    function pad( n ) { return n < 10 ? '0' + n : n; }
     return SPdate;
-  };
+  }; //End SPdateConverter
   
   //Private function to change string characters form multi-line text to SharePoint save-able text
   function escapeHTML(s) { return typeof(s) != "string"?"":s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 }
-
 
 function compareFields(originVal,changeVal) {
 //compare object values with the same properties and return with an array of differences
@@ -124,7 +128,6 @@ $().SPServices({
         }  
   });
 }
-
 
 function pingFields() {
 //For development purpose only. Return all form fields read.
