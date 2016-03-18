@@ -275,9 +275,13 @@ jQuery.ajax({
           else if(temp1.substring(0,2) == "TH") THpart += parseInt($(this).find("td.quantity").text(),10);
           else if(temp1.substring(0,4) == "MECH") MECHpart += parseInt($(this).find("td.quantity").text(),10);
         });
-        $("div#AegisOpps").append("<table id=aegisInfoTable><tbody><tr><th colspan='2'>Aegis BOM Info</th></tr><tr><td>SMT:</td><td id=aegisSMTpart>"+SMTpart+"</td></tr>"+
-          "<tr><td>TH:</td><td id=aegisTHpart>"+THpart+"</td></tr>" +
-          "<tr><td>MECH:</td><td id=aegisMECHpart>"+MECHpart+"</td></tr></tbody></table>");
+        temp1 = "<table id=aegisInfoTable><tbody><tr><th colspan='2'>Aegis BOM Info</th></tr><tr><td>SMT:</td><td id=aegisSMTpart>"+SMTpart+"</td></tr>"+
+        "<tr><td>TH:</td><td id=aegisTHpart>"+THpart+"</td></tr>" +
+        "<tr><td>MECH:</td><td id=aegisMECHpart>"+MECHpart+ "</td></tr>";
+        if( (SMTpart + THpart + MECHpart) == 0) temp1 += "<tr><td colspan=2 style='font: bold 24px arial; color: red;'>CALL KAI ABOUT THIS JOB</td></tr>";
+        temp1 += "</tbody></table>";
+        
+        $("div#AegisOpps").append(temp1);
       }
     });//end ajax AegisBOMpartlist
   }
