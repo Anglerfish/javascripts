@@ -93,7 +93,7 @@ var routeTable = "<table Class=routingDis><tbody>"+
                  "<tr><td>Assy ID <span id='JQassy'></span></td><td>Job Qty: <span style='font-weight:bold' id='JQjobQty'></span> / Balance due: <span id='JQbal' class='redBal'></span><span style='display:none' id='JQjobComplete'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job Complete</span></td></tr>" +
                  "<tr><td>PE: <span id='JQPE'></span></td><td>Target Ship Date: <span id='JQtargetDate'></span></td></tr>" +
                  "<tr><td class='tableblock' style='vertical-align:top; padding: 0px; border:0px'><table id='JQjobRoute'><tr><td colspan=2><a href=javascript:getItem('" + jobNo + "','RoutingSteps')>Routing Steps</a>&nbsp;/&nbsp;<a href=javascript:getItem('" + jobNo + "','Progression')>Progression</a></td></tr></table></td>" +
-                 "<td class='tableblock' style='vertical-align:top; padding: 0px; border:0px'><table><tr><td colspan=2>Job Info</td></tr><tr><td>Panel</td><td id='JQpanel'></td></tr><tr><td>SMT SS</td><td id='JQsmtSS'></td></tr><tr><td>SMT PS</td><td id='JQsmtPS'></td></tr><tr><td>Wave Comp</td><td id='JQwaveComp'></td></tr><tr><td>Wave Pins</td><td id='JQwavePin'></td></tr><tr><td>Hand Pins</td><td id='JQhandPin'></td></tr><tr><td>Mech Items</td><td id='JQmechItem'></td></tr><tr><td>Test Mins</td><td id='JQtestMin'></td></tr><tr><td>Conformal Coat</td><td id='JQcoat'></td></tr></table></td></tr>" +
+                 "<td class='tableblock' style='vertical-align:top; padding: 0px; border:0px'><table><tr><td colspan=2>Job Info</td></tr><tr><td>Panel</td><td id='JQpanel'></td></tr><tr><td>SMT SS</td><td id='JQsmtSS'></td></tr><tr><td>SMT PS</td><td id='JQsmtPS'></td></tr><tr><td>Wave Comp</td><td id='JQwaveComp'></td></tr><tr><td>Wave Pins</td><td id='JQwavePin'></td></tr><tr><td>Hand Pins</td><td id='JQhandPin'></td></tr><tr><td>Mech Items</td><td id='JQmechItem'></td></tr><tr><td>Test Mins</td><td id='JQtestMin'></td></tr><tr><td>Conformal Coat</td><td id='JQcoat'></td></tr><tr><td id='JQstencil'></td></tr></table></td></tr>" +
                  "<tr><td colspan=2 id='JQe2Comment'></td></tr><tr><td colspan=2>Schedule Comment: <br /><span id='JQscComment'></span>&nbsp;</td></tr>"
                  "</tbody></table>";
 
@@ -141,6 +141,33 @@ $().SPServices({
 
 return temp2;
 } //End getJobfromAssy
+
+function getStencil(){
+var dfd = $.Deferred();
+var jobQuery = "/AJAX/stencil_ICFPM.aspx?JobID=" + jobNo;
+var e2info = "Stencils:<br />";
+
+$("td#JQstencil").text("");
+jQuery.ajax({
+  url: jobQuery,
+  beforeSend: function() { },
+  success:function(data){
+    $(data).find(".stencilName").each(function(){
+      e2info += $(this).text();
+    });
+    $("#JQstencil").append(e2info);
+    dfd.resolve("");
+  },
+  fail:function(){
+    e2info = "<div>Failed to load data.Please try again later.</div>";
+    $("#JQstencil").append(e2info);
+    dfd.resolve("");
+  }
+});
+
+return dfd.promise();
+
+}
 
 function getE2jobcomments(jobNo){
 var dfd = $.Deferred();
@@ -195,7 +222,7 @@ $("span#JQjobNo").html("<a href=javascript:getItem('" + jobNo + "','Master') cla
 myQuery = "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>";
 
 
-$.when(getPEPrioritizationList(),getMasterJobList(),getSMTProgramSchedule(),getE2jobcomments(jobNo))
+$.when(getPEPrioritizationList(),getMasterJobList(),getSMTProgramSchedule(),getE2jobcomments(jobNo),getStencil(jobNo))
 .done(function(){
 
   $("a.PWadapter").click(function(){
