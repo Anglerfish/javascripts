@@ -588,10 +588,12 @@ $.when(getSPList("Master Job List",jobNo),getSPList("SMT-Program Schedule",jobNo
                   ["Customer",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Customer")]];
     deferreds.push(createSPList("SMT-Program Schedule",mjl2sp));
   }
-  
+   
   for(var i = 0, l = routerChange.length; i < l; i++) {
     deferreds.push(addUpdateRouter(i,l,masterData,jobVals));
   }
+  
+  if(routerChange.length > 0) deferreds.push(addUpdateRouter(999,1000,masterData,jobVals));  //Update Open Jobs Progression
   
   $.when.apply($,deferreds).done(function(){
     dfd.resolve();
@@ -604,18 +606,20 @@ return dfd.promise();
 //Internal function. Use after routerSetup. Forms the update query and then activate the query through SPServices
 function addUpdateRouter(i,l,masterData,jobVals) {
   var dfd = $.Deferred();
-  var listTitle = code2List(routerChange[i].route);
+  var listTitle = (i == 999)? "Open Jobs Progression": code2List(routerChange[i].route); 
   var pairVal = getMasterSQL(listTitle,masterData,jobVals);
   var pairID;
 
-  if (routerChange[i].routeNum == 1) pairVal.push(["Qty_x0020_In",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Qty")]);
-  if (i != 0 && routerChange[i].route != "END"){
-    if(routerChange[(i-1)].routeNum == (routerChange[i].routeNum - 1)) pairVal.push(["Prev_x0020_Proc",routerChange[i-1].route]);
-  }
-  if ( i != (l-1) && routerChange[i].route != "END"){
-    if(routerChange[(i+1)].routeNum == (routerChange[i].routeNum + 1)) {
-      if(listTitle == "SMT Operation PS Schedule") pairVal.push(["NExt_x0020_Proc",routerChange[i+1].route]);
-      else pairVal.push(["Next_x0020_Proc",routerChange[i+1].route]);
+  if(i != 999) {  //where 999 is for Open Jobs Progression only.
+    if (routerChange[i].routeNum == 1) pairVal.push(["Qty_x0020_In",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Qty")]);
+    if (i != 0 && routerChange[i].route != "END"){
+      if(routerChange[(i-1)].routeNum == (routerChange[i].routeNum - 1)) pairVal.push(["Prev_x0020_Proc",routerChange[i-1].route]);
+    }
+    if ( i != (l-1) && routerChange[i].route != "END"){
+      if(routerChange[(i+1)].routeNum == (routerChange[i].routeNum + 1)) {
+        if(listTitle == "SMT Operation PS Schedule") pairVal.push(["NExt_x0020_Proc",routerChange[i+1].route]);
+        else pairVal.push(["Next_x0020_Proc",routerChange[i+1].route]);
+      }
     }
   }
   
@@ -791,7 +795,7 @@ switch (num)
            routePropVal.push(["Target_x0020_Ship_x0020_Date",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_SO_x0020_Due")]);
            routePropVal.push(["Stock_x003f_",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Job_x0020_Type")]);
            break;
-  case "Open Jobs Progression": 
+  case "Open Jobs Progression":
            routePropVal.push(["Dorigo_x0020_Assy_x0020_ID",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assy_x0023_")]);
            break;
 }
