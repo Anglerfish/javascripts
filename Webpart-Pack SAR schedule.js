@@ -2,8 +2,6 @@ function PackSARSchedule(){
 $(document).ready(function() {
 $("head").append('<link href="http://server1:8086/javascripts/Webpart-Pack SAR schedule.css" rel="stylesheet" type="text/css" />');
 
-alert("hello");
-
 set_scroll();
 
 //Sets DispForm to EditForm2
@@ -16,6 +14,22 @@ $("TABLE[SUMMARY^='Pack Schedule']").find("TABLE[DisplayName^='Job No.']").paren
 
 //Keeping a column width at a certain size
 $("TABLE[SUMMARY^='Shipment Authorization']").find("TABLE[DisplayName^='Job No.']").parents("TH").width(75);
+
+//Setup production window for Final Inspection
+var processHeader;
+var itemID;
+
+setupProductionWindow();
+
+$("table.ms-listviewtable").each(function(){
+  processHeader = $(this).attr("summary");
+  if (processHeader == "Final Inspection Schedule"){
+    $(this).find("table[ctype='Item']").each(function(){
+      itemID = $(this).attr("id");
+      $(this).find("a").removeAttr("onclick href").attr("ph",processHeader).attr("itemID",itemID).click(function(){ProcessorWindow($(this).attr("ph"),$(this).attr("itemID"))});
+    });
+  }
+});
 
 //Priority Changer Dropbox
 var idvalue = 0;
