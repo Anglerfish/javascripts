@@ -17,46 +17,42 @@ $("body").append('<table Class=assyList style="display:none;"><tbody><tr><td cla
 
 setupProductionWindow();
 
-$(".jobInput").select().focus().keydown(function(){
+$("input#searchInput").select().focus().click(function(){$("input#searchInput").keydown();});
+$("input#searchInput").keydown(function(){
   clearTimeout(stopTimer);
   stopTimer = setTimeout(function(){
-    jobNo = $(".jobInput").val();
-    if(jobNo == "TBD" || jobNo == "")$("span#JQloader").hide();
-    else startJobQuery(jobNo);
-  }, typeTime);
-});
-
-$(".assyInput").click(function(){$(".assyInput").keydown();});
-$(".assyInput").keydown(function(){
-  clearTimeout(stopTimer);
-  stopTimer = setTimeout(function(){
-    assyID = $(".assyInput").val();
+    assyID = $("input#searchInput").val();
     $(".assyList tbody").remove();
     if(assyID != ""){
       temp1 = "<tbody><tr><td class='assyDD assyDDCancel'>cancel</td></tr>";
-      temp3 = getJobfromAssy(assyID);
-      for(i=0;i<temp3.length;i++) {temp1 += "<tr><td class='assyDD assyDDSelect'>" + temp3[i] + "</td></tr>";}
-      temp1 += "</tbody>";
-      $(".assyList").append(temp1);
-      $(".assyDD").hover(function(){$(this).css("background-color","yellow");},
-        function(){$(this).css("background-color","white")});
-      $(".assyDDCancel").click(function(){$(".assyList").hide();});
-      $(".assyDDSelect").click(function(){
-        $(".jobInput").val($(this).text());
-        startJobQuery($(this).text());
-        $(".assyList").hide();
-      });
-      $(".assyList").show();
+      temp3 = getJobfromAny(assyID);
+      if(temp3.length==1){
+        startJobQuery($("<div>"+temp3[0]+"</div>").find("span.jobNoResult").text());
+      } else {
+        if(temp3.length==0)temp1 += "<tr><td class='assyDD assyDDE2Select'>Search " + assyID + " in E2 (for comments only)</td></tr>";
+        else for(i=0;i<temp3.length;i++) {temp1 += "<tr><td class='assyDD assyDDSelect'>" + temp3[i] + "</td></tr>";}
+        temp1 += "</tbody>";
+        $(".assyList").append(temp1);
+        $(".assyDD").hover(function(){$(this).css("background-color","#b3e6ff");},
+          function(){$(this).css("background-color","white")});
+        $(".assyDDCancel").click(function(){$(".assyList").hide();});
+        $(".assyDDSelect").click(function(){
+          startJobQuery($(this).find("span.jobNoResult").text());
+          $(".assyList").hide();
+        });
+        $(".assyDDE2Select").click(function(){
+          startJobQuery(assyID);
+          $(".assyList").hide();
+        });
+        $(".assyList").show();
+      }
     }
   }, typeTime - 500);
 });
 
 JSRequest.EnsureSetup();
 jobNo = JSRequest.QueryString["jobNo"];
-if(typeof(jobNo) != "undefined") {
-  $("input.jobInput").val(jobNo);
-  startJobQuery(jobNo);
-}
+if(typeof(jobNo) != "undefined") $("input#searchInput").val(jobNo).click();
 
 });
 }; //End Open Jobs Query
@@ -82,7 +78,6 @@ function pWadapter(routingcode){
   };
 } // End pWadapter
 
-
 function startJobQuery(jobNo){
 
 $("span#JQloader").show();
@@ -100,47 +95,35 @@ var routeTable = "<table Class=routingDis><tbody>"+
 
 $("#routingAnchor").append(routeTable);
 
-if(jobNo.substring(0,3) == "in " || jobNo.substring(0,3) == "IN "){
-    jobNo = jobNo.substring(3);
-  do {
-    if(jobNo.indexOf(",") == -1){
-      getRouting(jobNo);
-      $("span#JQloader").hide();      
-    }else {
-      getRouting(jobNo.substring(0, jobNo.indexOf(",")));
-      jobNo = jobNo.substring(jobNo.indexOf(",")+1);
-    }
-  } while (jobNo.indexOf(',') != -1);
-  
-}
-else {
-  getRouting(jobNo);
-}
+getRouting(jobNo);
 
 } //End startJobQuery
 
-function getJobfromAssy(assyID) {
+function getJobfromAny(jobDesc) {
+  myQuery = "<Query><Where><Or><Or><Or><Contains><FieldRef Name='Description' /><Value Type='Text'>" + jobDesc + 
+            "</Value></Contains><Contains><FieldRef Name='Dorigo_x0020_Assy_x0023_' /><Value Type='Text'>" + jobDesc +
+            "</Value></Contains></Or><Contains><FieldRef Name='Cust_x0020_Assy_x0023_' /><Value Type='Text'>" + jobDesc +
+            "</Value></Contains></Or><Contains><FieldRef Name='Title' /><Value Type='Text'>" + jobDesc +
+            "</Value></Contains></Or></Where><OrderBy><FieldRef Name='ID' Ascending='False' /></OrderBy></Query>";
+  var temp2 = new Array();
 
-myQuery = "<Query><Where><Eq><FieldRef Name='Dorigo_x0020_Assy_x0023_' /><Value Type='Text'>" + assyID + "</Value></Eq></Where></Query>";
-var temp2 = new Array();
+  $().SPServices({
+    operation: "GetListItems",
+    async: false,
+    listName: "Master Job List",
+    CAMLViewFields: "<ViewFields><FieldRef Name='Title' /><FieldRef Name='Dorigo_x0020_Assy_x0023_' /><FieldRef Name='Cust_x0020_Assy_x0023_' /><FieldRef Name='Description' /></ViewFields>",
+    CAMLRowLimit: 100,
+    CAMLQueryOptions: myQueryOptions,
+    CAMLQuery: myQuery,
+    completefunc: function (xData, Status) {
+      $(xData.responseXML).SPFilterNode("z:row").each(function(n) {
+        temp2[n] = "<span class=jobNoResult>" + $(this).attr("ows_Title")+"</span>: "+ $(this).attr("ows_Dorigo_x0020_Assy_x0023_") + "<b> >> </b>" + $(this).attr("ows_Cust_x0020_Assy_x0023_") + "<br/>" + $(this).attr("ows_Description");
+      });
+    }
+  });
 
-$().SPServices({
-  operation: "GetListItems",
-  async: false,
-  listName: "Master Job List",
-  CAMLViewFields: "<ViewFields><FieldRef Name='Title' /></ViewFields>",
-  CAMLRowLimit: 500,
-  CAMLQueryOptions: myQueryOptions,
-  CAMLQuery: myQuery,
-  completefunc: function (xData, Status) {
-    $(xData.responseXML).SPFilterNode("z:row").each(function(n) {
-      temp2[n] = $(this).attr("ows_Title");
-    });
-  }
-});
-
-return temp2;
-} //End getJobfromAssy
+  return temp2;
+  } //End getAssyfromANY
 
 function getStencil(){
 var dfd = $.Deferred();
@@ -166,7 +149,6 @@ jQuery.ajax({
 });
 
 return dfd.promise();
-
 }
 
 function getE2jobcomments(jobNo){
@@ -211,12 +193,6 @@ function getRouting(jobNo){
  var scheduleSS;
  var routeTable;
 
-jobNo = jobNo.toUpperCase();
-if(jobNo.substring(0,1) != "0" && jobNo.substring(0,1) != "R"){
-  jobNo = "0" + jobNo;
-}
-
-$(".jobInput").val(jobNo);
 $("span#JQjobNo").html("<a href=javascript:getItem('" + jobNo + "','Master') class='jobNoLink'>" + jobNo + "</a>");
 
 myQuery = "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>";
@@ -519,6 +495,4 @@ $().SPServices({
     window.open("http://server1:8086/Lists/" + listSite + "/" + editFormName + ".aspx?ID=" + toID + "&Source=" + returnSite, '_newtab');
   }
 });
-
-
 }
