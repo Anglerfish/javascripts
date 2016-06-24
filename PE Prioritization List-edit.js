@@ -128,8 +128,8 @@ else {
       if($(this).val() == "SMT Oper SS") smtPlacement[1] = true;
     });
     
-    smtNumber[0] = $("input[title='SMT-PS Parts']").val();
-    smtNumber[1] = $("input[title='SMT-SS Parts']").val();
+    smtNumber[0] = parseInt($("input[title='SMT-PS Parts']").val().replace(/,+/g,''),10);
+    smtNumber[1] = parseInt($("input[title='SMT-SS Parts']").val().replace(/,+/g,''),10);
     
     if(smtPlacement[0] == true && smtNumber[0] > 0) smtCheck[0] = true;
     else if(smtPlacement[0] == false) { 
@@ -585,6 +585,8 @@ $.when(getSPList("Master Job List",jobNo),getSPList("SMT-Program Schedule",jobNo
                   ["Orange",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Orange")],
                   ["Flux_x0020_Type",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Flux_x0020_Type")],
                   ["Assy_x0020_Type",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Assy_x0020_Type")],
+                  ["Next_x0020_Proc",jobVals.Routing_x0020_1],
+                  ["Next_x0020_Next_x0020_Proc",jobVals.Routing_x0020_2],
                   ["Customer",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_Customer")]];
     deferreds.push(createSPList("SMT-Program Schedule",mjl2sp));
   }
