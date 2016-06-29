@@ -9,11 +9,31 @@ var temp3;
 var typeTime = 1000;
 var stopTimer;
 
+function getListID(listName, jobNo) {
+  var dfd = $.Deferred();
+  $().SPServices({
+    operation: "GetListItems",
+    async: true,
+    listName: listName,
+    CAMLViewFields: "<ViewFields><FieldRef Name='ID' /></ViewFields>",
+    CAMLRowLimit: 1,
+    CAMLQueryOptions: myQueryOptions,
+      CAMLQuery: "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>",
+      completefunc: function (xData, Status) {
+        dfd.resolve($(xData.responseXML).SPFilterNode("z:row").attr("ows_ID"));
+      }
+  });
+}
+
+
 function OpenJobsQuery(){
 $(document).ready(function() {
 if(browseris.ie5up) $("head").append('<link href="http://server1:8086/javascripts/Webpart-Jobs%20Query.css" rel="stylesheet" type="text/css">');
 else $("head").append('<link href="/javascripts/Webpart-Jobs%20Query.css" rel="stylesheet" type="text/css">');
 $("body").append('<table Class=assyList style="display:none;"><tbody><tr><td class=assySelect>cancel</td></tr></tbody></table>');
+
+var temptemptemp = getListID("STM-Program Schedule","035124");
+alert(temptemptemp); 
 
 setupProductionWindow();
 
