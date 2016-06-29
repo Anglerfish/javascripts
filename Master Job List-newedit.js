@@ -41,16 +41,14 @@ $("input.forceUpdate").click(function(){
   
   if(fup == true) {
     var clearVal = {};
-    for (var okey in originVal) {
-      clearVal[okey] = "";
-    }
+    for (var okey in originVal) { clearVal[okey] = ""; }
 ////////////////////////////////////////ENABLE NO SAVE UPDATE///////////////////////////////////////////////////////////////////////////////////////
     loadSubmit(clearVal,true);
 //    loadSubmit(clearVal,false);
   }
 });
-
 ///////////////////////////////////////ENABLE SUBMIT BUTTON//////////////////////////////////////////////////////////////////////////////
+
 $("input.loadSubmit").click(function(){
   loadSubmit(originVal,true);
 }); //End click on save
@@ -196,7 +194,21 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
 //        tempA += routeProp + ":::";
 //      }
 //      $("td#loadPPS").text(tempA);
-   
+
+      $.when(getListID("SMT-Program Schedule",jobNo)).done(function(listID) {
+        if($.isNumeric(listID)) {
+          var pairVal = [["Dorigo_x0020_Assy_x0023_", changeVal.Dorigo_x0020_Assy_x0023_],
+                         ["Customer", changeVal.Customer],
+                         ["Qty", changeVal.Qty],
+                         ["Description", changeVal.Description],
+                         ["T_x002f_CONS", changeVal.T_x002f_CONS],
+                         ["Orange", changeVal.Orange],
+                         ["Last_x0020_Job_x0020_No_x002e__x", changeVal.Last_x0020_Job_x0020_No_x002e__x],
+                         ["SO_x0020_Due", changeVal.SO_x0020_Due]];
+          deferreds.push(updateListItem("SMT-Program Schedule", listID, pairVal));
+        }; 
+      });
+
       for(var i=1;i<=27;i++){ deferreds.push(getRouterID(getEachRouterProp(i,changeVal),jobNo,changeVal.Qty)); }
       
       $("td#loadPPS").text("Production Process Steps update");
@@ -290,11 +302,6 @@ function getEachRouterProp(num,jobVal){
 var routePropVal = new Array();
 switch (num)
 {
-/*  case "SMTOperSS":
-    routePropVal.push("SMT-Placement Schedule"); break;
-  case "SMTOperPS":
-    routePropVal.push("SMT-Placement Schedule"); break;
-*/
   case 1: routePropVal.push("SMT Operation PS Schedule"); break;
   case 2: routePropVal.push("SMT Operation SS Schedule"); break;
   case 3: routePropVal.push("SMT Inspection Schedule"); break;
@@ -373,9 +380,7 @@ $().SPServices({
   completefunc: function(xData, Status) { 
     var temp1 = $(xData.responseXML).SPFilterNode("ErrorText").text();
     if( typeof(temp1) != "undefined") {
-      if(temp1.length > 0){
-        $("td#loadError").append("<p>" + listTitle + ":" + xData.responseText + "</p>");
-      }
+      if(temp1.length > 0) $("td#loadError").append("<p>" + listTitle + ":" + xData.responseText + "</p>");
     }
     dfd.resolve();  
   }
@@ -396,10 +401,7 @@ $().SPServices({
   completefunc: function(xData, Status) { 
     var temp1 = $(xData.responseXML).SPFilterNode("ErrorText").text();
     if( typeof(temp1) != "undefined") {
-      if(temp1.length > 0){
-        $("td#loadError").append("<p>" + listTitle + ":" + xData.responseText + "</p>");
-      }
-    }
+      if(temp1.length > 0) $("td#loadError").append("<p>" + listTitle + ":" + xData.responseText + "</p>");
     dfd.resolve();  
   }
 });
