@@ -402,6 +402,7 @@ $().SPServices({
     var temp1 = $(xData.responseXML).SPFilterNode("ErrorText").text();
     if( typeof(temp1) != "undefined") {
       if(temp1.length > 0) $("td#loadError").append("<p>" + listTitle + ":" + xData.responseText + "</p>");
+    }
     dfd.resolve();  
   }
 });
