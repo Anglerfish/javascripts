@@ -408,22 +408,3 @@ $().SPServices({
 });
 return dfd.promise();
 }//End updateListItem
-
-function UserGuide(pageName) {
-  $("body").append("<a id=userGuideIcon href='/User%20Guide/"+pageName+".aspx' target='_blank' title='User Guide on SharePoint'>HELP</a>");
-  $("a#userGuideIcon").css({"position":"absolute",
-    "right":"25px",
-    "top":"110px",
-    "font-family":"Arial, Helvetica, Sans-Serif",
-    "text-decoration": "none",
-    "font-size": "16px",
-    "font-weight": "bold",
-    "color":"#429ed7",
-    "background":"white",
-    "border":"3px #429ed7 solid",
-    "padding":"5px, 8px"}).mouseover(function(){
-      $(this).css({"color":"green","border-color":"green"});
-    }).mouseleave(function(){
-      $(this).css({"color":"#429ed7","border-color":"#429ed7"});
-    });
-}//End UserGuide

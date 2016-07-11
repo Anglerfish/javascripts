@@ -22,6 +22,8 @@ $("table.ms-listviewtable").each(function(){
   }
 });
 
+UserGuide("Production Schedule");
+
 });
 }; //JobQtyProcess Function Ends
 
@@ -32,7 +34,7 @@ else $("head").append('<link href="/javascripts/ProductionJobQtyProcess.css" rel
 $("body").append("<span class=jstatus>Loading...</span><div class=overlay style='display:none;'></div><span class=closer style='display:none;'>x</span>"
   + "<table class=JobQtyProcessor style='display:none;'><tbody><tr><td colspan=2>Job No. <span style='font-weight:bold;' class=JQPJobNo>&nbsp;</span></td></tr>"
   + "<tr><td colspan=2 class=JQPTransact></td></tr><tr><td>Current Qty:</td><td><span class=qtyLeft>&nbsp;</span></td></tr>"
-  + "<tr><td>Qty Pr<span class='secretButton'>o</span>cess:&nbsp;</td><td style='width:270px;'><input class=JQPQtyProcess type='text' onkeypress='return JQPkeyLock(event,this)' name='QtyProcess' style='width:100px;' />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class=JQPEnter>Press Enter</span></td></tr>"	
+  + "<tr><td>Qty Pr<span class='secretButton'>o</span>cess:&nbsp;</td><td style='width:270px;'><input class=JQPQtyProcess type='text' onkeypress='return JQPkeyLock(event,this)' name='QtyProcess' style='width:100px;' />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class=JQPEnter>Press Enter</span></td></tr>"  
   + "<tr><td colspan=2 >Comments:<br /><textarea rows='15' class='ckeditor comments' name='PJQcomments' id='PJQcomments'></textarea></td></tr>"
   + "<tr class=JQPinternal style='display:none;'><td><div class=JQPID></div><div class=JQPQtyIn></div><div class=JQPQtyCompl></div>"
   + "<div class=JQPCurrList></div><div class=JQPNextList></div><div class=JQPCustomer></div><div class=JQPAssyID></div>"
