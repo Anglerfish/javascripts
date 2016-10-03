@@ -57,7 +57,7 @@ function startlabelMaker(orglabelNo) {
               temp1++;
             } while(temp1 < e2info.length);
             
-            if(labelNo >= 30 ) {
+            if(labelNo > 30 ) {
               alert("Error. Not enough labels to print.\nPlease restart label printing with new sheet.");
             } else window.print();
           }
