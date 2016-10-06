@@ -1,4 +1,5 @@
 function masterRevise() {
+
 var typeTime = 1000;
 var stopTimer;
 
@@ -31,17 +32,18 @@ loadScript("/jquery.SPServices-0.7.1a.min.js",function() {
 //End Dynamic load Javascript Library Ends
 
 jQuery(document).ready(function(){
+
   if(browseris.ie5up) jQuery("head").append('<link href="http://server1:8086/javascripts/masterpage.css" rel="stylesheet" type="text/css" />');
   else jQuery("head").append('<link href="/javascripts/masterpage.css" rel="stylesheet" type="text/css" />');
   
   jQuery("input#sqlSearch").keyup(function(e){
     clearTimeout(stopTimer);
     stopTimer = setTimeout(function(){
-      sqlSearch(jQuery("input#sqlSearch").val());
+    searchRefine(jQuery("input#sqlSearch").val());
     },typeTime);
   });
 
-  jQuery("img#sqlSearchImg").click(function(){ sqlSearch(jQuery("input#sqlSearch").val()); });
+  jQuery("img#sqlSearchImg").click(function(){ searchRefine(jQuery("input#sqlSearch").val()); });
 
   var elems = document.getElementsByTagName('div'), i;
   for (i in elems) {
@@ -53,57 +55,88 @@ jQuery(document).ready(function(){
 });
 }
 
-function sqlSearch(sqlSearchTerm) {
-  var myQueryOptions = "<QueryOptions><ViewAttributes Scope='RecursiveAll' IncludeRootFolder='True' /></QueryOptions>";
-  var sqlTableText = "";
-  if (sqlSearchTerm == "") jQuery("table#sqlSearchTable").hide();
-  else  jQuery("table#sqlSearchTable").show();
-
+function searchRefine(sqlSearchTerm) {
+//alert(sqlSearchTerm);
+  var deferreds = [];
+  var dfd = $.Deferred();
   var msPageTitle = jQuery("#onetidPageTitle a").text();
-  if(msPageTitle.length) {}
+  if(msPageTitle.length) {} 
   else msPageTitle = jQuery.trim(jQuery("#onetidPageTitle").text());
-  JSRequest.EnsureSetup();
-  var temp = JSRequest.PathName;
-  if(temp.indexOf("/Lists/") >= 0) {
-    temp = temp.substring(temp.indexOf("/Lists/")+7);
-    temp = temp.substring(0,temp.indexOf("/"));
-  } else if(temp.indexOf("Manufacturing%20Inquiry%20Database") >= 0) {
-    temp = temp.substring(1);
-    temp = temp.substring(0,temp.indexOf("/"));
-  } else temp = "";
-
-  if(temp != "") {
+//  alert(msPageTitle + " " + sqlSearchTerm);
+  
+  if (sqlSearchTerm == "") jQuery("table#sqlSearchTable").hide();
+  else  {
     $("img#sqlLoadStatus").show();
-    var sqlAddress;
-    var sqlQuery = sqlQueryBuilder(msPageTitle,sqlSearchTerm);
-    var camlFieldQuery = camlFieldBuilder(msPageTitle);
-    
-    jQuery().SPServices({
-      operation: "GetListItems",
-      async: true,
-      listName: msPageTitle,
-      CAMLViewFields: camlFieldQuery,
-      CAMLRowLimit: 100,
-      CAMLQuery: sqlQuery,
-      CAMLQueryOptions: myQueryOptions,
-      completefunc: function (xData, Status) {
-        jQuery(xData.responseXML).SPFilterNode("z:row").each(function(){
-          if (temp == "Manufacturing%20Inquiry%20Database") sqlAddress = "http://server1:8086/" + temp + "/" + jQuery(this).attr("ows_Title");
-          else sqlAddress = "http://server1:8086/Lists/"+ temp + "/DispForm.aspx?ID=" + jQuery(this).attr("ows_ID");
-          if (msPageTitle == "Resume Applicant List") sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href=" + sqlAddress + ">" + jQuery(this).attr("ows_Title")+ "</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_First_x0020_Name") + " " + jQuery(this).attr("ows_Last_x0020_Name") + "</span></td></tr>";
-          else sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href=" + sqlAddress + ">" + jQuery(this).attr("ows_Title")+ "</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_Customer") + "</span></td></tr>";
-        });
-        jQuery("img#sqlLoadStatus").hide();
-        sqlTableText += "<tr><td style='background-color:silver; width: 160px; height: 1px'></td></tr><tr><td><a href='http://server1:8086/Webparts/Jobs%20Query.aspx?jobNo=" + sqlSearchTerm + "'>Job Query: "+ sqlSearchTerm + "</a></td></tr>";
-        jQuery("table#sqlSearchTable tbody").html(sqlTableText);
-      }
-    });
-  } else {
-    sqlTableText += "<tr><td style='background-color:silver; width: 160px; height: 1px'></td></tr><tr><td><a href='http://server1:8086/Webparts/Jobs%20Query.aspx?jobNo=" + sqlSearchTerm + "'>Job Query: "+ sqlSearchTerm + "</a></td></tr>";
-    jQuery("table#sqlSearchTable tbody").html(sqlTableText);
+    jQuery("table#sqlSearchTable").show();
+  }
+  //Add Not search at all!
+  
+  switch (msPageTitle) {
+  case "SMT Program / Placement Schedule":
+    deferreds.push(sqlSearch("SMT-Program Schedule",sqlSearchTerm,5));
+    deferreds.push(sqlSearch("SMT-Placement Schedule",sqlSearchTerm,10));
+    break;
+  case "Wavesolder / Selective Schedule":
+    deferreds.push(sqlSearch("PTH Wave Schedule",sqlSearchTerm,5));
+    deferreds.push(sqlSearch("PTH Select Schedule",sqlSearchTerm,5));
+    break;
+  case "Handsolder Schedule":
+    deferreds.push(sqlSearch("HS Operation 1 Schedule",sqlSearchTerm,5));
+    deferreds.push(sqlSearch("HS Operation 2 Schedule",sqlSearchTerm,5));
+    deferreds.push(sqlSearch("HS Operation 3 Schedule",sqlSearchTerm,5));
+    break;
+  case "Mechanical Schedule":
+    deferreds.push(sqlSearch("MECH Operation 1 Schedule",sqlSearchTerm,5));
+    deferreds.push(sqlSearch("MECH Operation 2 Schedule",sqlSearchTerm,5));
+    break;
+  default:
+    deferreds.push(sqlSearch(msPageTitle,sqlSearchTerm,100));
   }
 
+//  if(deferreds.length > 0){ //if multiple lists are being searched. Change to >1 later
+    $.when.apply($,deferreds).done(function(){
+      var tempFinal = "";
+        $.each(arguments, function(index, responseData){
+          tempFinal += responseData;
+        });
+        tempFinal += "<tr><td style='background-color:silver; width: 160px; height: 1px'></td></tr><tr><td><a href='http://server1:8086/Webparts/Jobs%20Query.aspx?jobNo=" + sqlSearchTerm + "'>Job Query: "+ sqlSearchTerm + "</a></td></tr>";
+        $("table#sqlSearchTable tbody").html(tempFinal);
+        $("img#sqlLoadStatus").hide();
+    });
+//  }
+}
 
+function sqlSearch(msPageTitle,sqlSearchTerm,searchNum) {
+  var dfd = $.Deferred();
+  var sqlTableText = "<tr><td style='padding:0px 0px 8px 0px; font-weight: bold;'>" + msPageTitle + "</td></tr>";
+  var sqlAddress;
+  var camlFieldQuery = camlFieldBuilder(msPageTitle);
+  var sqlQuery = sqlQueryBuilder(msPageTitle,sqlSearchTerm);
+
+  jQuery().SPServices({
+    operation: "GetListItems",
+    async: true,
+    listName: msPageTitle,
+    CAMLViewFields: camlFieldQuery,
+    CAMLRowLimit: searchNum,
+    CAMLQuery: sqlQuery,
+    CAMLQueryOptions: "<QueryOptions><ViewAttributes Scope='RecursiveAll' IncludeRootFolder='True' /></QueryOptions>",
+    completefunc: function (xData, Status) {
+      if(jQuery(xData.responseXML).SPFilterNode("z:row").length < 1) sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'>No result.</td></tr>";
+      jQuery(xData.responseXML).SPFilterNode("z:row").each(function(){
+        sqlAddress = jQuery(this).attr("ows_ServerUrl");
+        if(sqlAddress.substring(0,7) == "/Lists/") sqlAddress = "http://server1:8086" + sqlAddress.substring(0,sqlAddress.lastIndexOf("/") + 1) + "DispForm.aspx?ID=" + jQuery(this).attr("ows_ID");
+        else sqlAddress = "http://server1:8086" + sqlAddress.substring(0,sqlAddress.lastIndexOf("/") + 1) + jQuery(this).attr("ows_Title") ;
+
+        if (msPageTitle == "Resume Applicant List") sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href='" + sqlAddress + "'>" + jQuery(this).attr("ows_Title")+ "</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_First_x0020_Name") + " " + jQuery(this).attr("ows_Last_x0020_Name") + "</span></td></tr>";
+        else sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href='" + sqlAddress + "'>" + jQuery(this).attr("ows_Title")+ "</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_Customer") + "</span></td></tr>";
+     //   sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'>"+ $(this).attr("ows_Title") + " " + $(this).attr("ows_ServerUrl") + "</td></tr>";
+      });
+      dfd.resolve(sqlTableText);
+    }
+  });
+  
+  return dfd.promise();
 };
 
 function henri(){
@@ -120,8 +153,8 @@ function camlFieldBuilder(msPageTitle) {
   var camlString;
   
   switch (msPageTitle) {
-    case "Resume Applicant List": camlString = "<ViewFields><FieldRef Name='Title' /><FieldRef Name='ID' /><FieldRef Name='First_x0020_Name' /><FieldRef Name='Last_x0020_Name' /></ViewFields>"; break;
-    default: camlString = "<ViewFields><FieldRef Name='Title' /><FieldRef Name='ID' /><FieldRef Name='Customer' /></ViewFields>";
+    case "Resume Applicant List": camlString = "<ViewFields><FieldRef Name='Title' /><FieldRef Name='ID' /><FieldRef Name='First_x0020_Name' /><FieldRef Name='Last_x0020_Name' /><FieldRef Name='ServerUrl' /></ViewFields>"; break;
+    default: camlString = "<ViewFields><FieldRef Name='Title' /><FieldRef Name='ID' /><FieldRef Name='Customer' /><FieldRef Name='ServerUrl' /></ViewFields>";
   }
   
   return camlString;
