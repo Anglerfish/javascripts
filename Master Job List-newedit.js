@@ -96,7 +96,6 @@ $(".E2toSP").mousedown(function(e){
 }; // End MasterJobListEdit
 
 function loadSubmit(originVal,saveSubmit){
-
 if(!browseris.ie5up) { for(var i in CKEDITOR.instances) { CKEDITOR.instances[i].updateElement();} }
 var changeVal = readFields();
 var jobNo = changeVal.Title;
@@ -109,31 +108,49 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
   $("span#saveStatus").show();
   var changeFieldNames = changedFields(originVal,changeVal);
   var deferreds = [];
-  
-  deferreds.push(updatePEPL(changeFieldNames, changeVal));
-  updatePPS(changeFieldNames, changeVal);
-  
-  $.when.apply($,deferreds).done(function(){
-    setTimeout(function(){
-      if($("td#loadError").text() != "") {
-        $("td#loadStatus").text("ERROR! STOP AND CALL KAI");
-      } else {
-        $("td#loadStatus").css("color","black").text("Complete");
-        setTimeout(function(){
-            $("span#saveStatus").hide();
-              if(saveSubmit == true) {
-                $("INPUT[ID$='diidIOSaveItem']:first").click();
-              }
-        },1000);
+  var PEPLid;
+  var PEPLr1;
+  $().SPServices({
+    operation: "GetListItems",
+    async: true,
+    listName: "PE Prioritization List",
+    CAMLViewFields: "<ViewFields><FieldRef Name='ID' /><FieldRef Name='Routing_x0020_1' /></ViewFields>",
+    CAMLRowLimit: 1,
+    CAMLQueryOptions: myQueryOptions,
+    CAMLQuery: "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>",
+    completefunc: function (xData, Status) {
+      PEPLid = $(xData.responseXML).SPFilterNode("z:row").attr("ows_ID");
+      deferreds.push(updatePEPL(PEPLid, changeFieldNames, changeVal));
+      
+      if (typeof(PEPLid) != "undefined") {
+        PEPLr1 = $(xData.responseXML).SPFilterNode("z:row").attr("ows_Routing_x0020_1");
+        updatePPS(PEPLr1,changeFieldNames,changeVal);
       }
-    },2000);
-  });
+      
+      $.when.apply($,deferreds).done(function(){
+        setTimeout(function(){
+          if($("td#loadError").text() != "") {
+            $("td#loadStatus").text("ERROR! STOP AND CALL KAI");
+          } else {
+            $("td#loadStatus").css("color","black").text("Complete");
+            setTimeout(function(){
+              $("span#saveStatus").hide();
+                if(saveSubmit == true) {
+                  $("INPUT[ID$='diidIOSaveItem']:first").click();
+                }
+            },1000);
+          }
+        },2000);
+      });
+
+      }
+    });
 } else {
-  $("INPUT[ID$='diidIOSaveItem']:first").click();
+  if(saveSubmit == true) { $("INPUT[ID$='diidIOSaveItem']:first").click();}
 }
 
 //internal function to compare changes to fields related to PE Prioritization List
-  function updatePEPL(changeFieldNames, changeVal){
+  function updatePEPL(listID, changeFieldNames, changeVal){
     var dfdPEPL = $.Deferred();
     var updateQuery = new Array();
     var temp1 = false;
@@ -152,30 +169,28 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
           ["Comments_x002d_Orange",changeVal.Comments_x002d_Orange]];
     if(changeVal.T_x002f_CONS == "CON" || changeVal.T_x002f_CONS == "CTK") updateQuery.push(["Kit_x0020_Up", changeVal.Exp_x0020_Kit_x0020_Date]);
 
-    $.when(getListID("PE Prioritization List", jobNo)).done(function(listID) {
-      for(var temp in changeFieldNames) {
-         if($.inArray(changeFieldNames[temp],["Dorigo_x0020_Assy_x0023_","Customer","Orange","SMT_x002d_B","SMT_x002d_T","Wave_x0020_Parts","Hand_x0020_Pins","Mech_x0020_Items","Test_x0020_Mins","Comments_x002d_Job_x0020_Schedul","Comments_x002d_PE","Comments_x002d_Orange","Exp_x0020_Kit_x0020_Date"])>-1){
-           temp1 = true;
-         }
+    for(var temp in changeFieldNames) {
+      if($.inArray(changeFieldNames[temp],["Dorigo_x0020_Assy_x0023_","Customer","Orange","SMT_x002d_B","SMT_x002d_T","Wave_x0020_Parts","Hand_x0020_Pins","Mech_x0020_Items","Test_x0020_Mins","Comments_x002d_Job_x0020_Schedul","Comments_x002d_PE","Comments_x002d_Orange","Exp_x0020_Kit_x0020_Date"])>-1){
+        temp1 = true;
       }
+    }
 
-      if (typeof(listID) != "undefined") {
-        if( temp1 == true ){
-          deferreds.push(updateListItem("PE Prioritization List", listID, updateQuery));
-          $("td#loadPEPL").text("PE Prioritization List Update");
-        } else { $("td#loadPEPL").text("PE Prioritization List - No Change"); }
-      } else {
-        deferreds.push(createListItem("PE Prioritization List", jobNo, updateQuery));
-        $("td#loadPEPL").text("PE prioritization List created");
-      }
-      dfdPEPL.resolve();
-    });
+    if (typeof(listID) != "undefined") {
+      if( temp1 == true ){
+        deferreds.push(updateListItem("PE Prioritization List", listID, updateQuery));
+        $("td#loadPEPL").text("PE Prioritization List Update");
+      } else { $("td#loadPEPL").text("PE Prioritization List - No Change"); }
+    } else {
+      deferreds.push(createListItem("PE Prioritization List", jobNo, updateQuery));
+      $("td#loadPEPL").text("PE prioritization List created");
+    }
+    dfdPEPL.resolve();
 
     return dfdPEPL.promise();
   } //End internal function updatePEPL
 
 //internal function to compare changes to fields related to Production Process steps
-  function updatePPS(changeFieldNames, changeVal) {
+  function updatePPS(PEPLr1, changeFieldNames, changeVal) {
     var temp1 = false;
     for(var temp in changeFieldNames) {
       if($.inArray(changeFieldNames[temp],["Dorigo_x0020_Assy_x0023_","Customer","Description","Qty","SO_x0020_Due","Job_x0020_Type","Comments_x002d_Pack_x002e_Ship"])>-1){
@@ -208,8 +223,10 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
           deferreds.push(updateListItem("SMT-Program Schedule", listID, pairVal));
         }; 
       });
-
-      for(var i=1;i<=27;i++){ deferreds.push(getRouterID(getEachRouterProp(i,changeVal),jobNo,changeVal.Qty)); }
+      
+      
+      var r1Prop = code2List(PEPLr1);
+      for(var i=1;i<=27;i++){ deferreds.push(getRouterID(getEachRouterProp(i,changeVal),r1Prop,jobNo,changeVal.Qty)); }
       
       $("td#loadPPS").text("Production Process Steps update");
     } else { 
@@ -262,7 +279,7 @@ jQuery.ajax({
 });
 }; //End loadajax
 
-function getRouterID(routerProp,jobNo,qty){
+function getRouterID(routerProp,r1Prop,jobNo,qty){
 var dfd = $.Deferred();
 
 var myQuery = "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>";
@@ -282,13 +299,14 @@ $().SPServices({
         var jQtyIn = parseInt($(xData.responseXML).SPFilterNode("z:row").attr("ows_Qty_x0020_In"),10);
         var jQtyCompl = parseInt($(xData.responseXML).SPFilterNode("z:row").attr("ows_Qty_x0020_Compl"),10);
 
-        if (jQtyIn > qty) {
+        if (jQtyIn > qty || r1Prop == routerProp[0]) {
           routerProp.push(["Qty_x0020_In",qty]);
           if(jQtyCompl > qty) {
             routerProp.push(["Qty_x0020_Compl",qty]);
             routerProp.push(["Qty_x0020_Left_x002e_",0]);
           } else routerProp.push(["Qty_x0020_Left_x002e_",(jQtyIn - jQtyCompl)]);
         }
+        
         dfd.resolve(updateListItem(routerProp[0], listID, routerProp.slice(1)));
       } else dfd.resolve();
     } else dfd.resolve();
@@ -408,3 +426,38 @@ $().SPServices({
 });
 return dfd.promise();
 }//End updateListItem
+
+function code2List(codeName) {
+  var listTitle = "";
+  switch (codeName)
+  {
+    case "SMT Oper SS": listTitle = "SMT Operation SS Schedule"; break;
+    case "SMT Oper PS": listTitle = "SMT Operation PS Schedule"; break;
+    case "SMT Insp": listTitle = "SMT Inspection Schedule"; break;
+    case "PTH Wave": listTitle = "PTH Wave Schedule"; break;
+    case "PTH Insp Wave": listTitle = "PTH Wave Inspection Schedule"; break;
+    case "PTH Select": listTitle = "PTH Select Schedule"; break;
+    case "PTH Insp Select": listTitle = "PTH Select Inspection Schedule"; break;
+    case "HS Oper 1": listTitle = "HS Operation 1 Schedule"; break;
+    case "HS Oper 2": listTitle = "HS Operation 2 Schedule"; break;
+    case "HS Oper 3": listTitle = "HS Operation 3 Schedule"; break;
+    case "HS Insp 1": listTitle = "HS Inspection 1 Schedule"; break;
+    case "HS Insp 2": listTitle = "HS Inspection 2 Schedule"; break;
+    case "HS Insp 3": listTitle = "HS Inspection 3 Schedule"; break;
+    case "CC Oper 1": listTitle = "CC Operation 1 Schedule"; break;
+    case "CC Insp 1": listTitle = "CC Inspection 1 Schedule"; break;
+    case "MECH Oper 1": listTitle = "MECH Operation 1 Schedule"; break;
+    case "MECH Oper 2": listTitle = "MECH Operation 2 Schedule"; break;
+    case "MECH Oper 3": listTitle = "MECH Operation 3 Schedule"; break;
+    case "MECH Insp 1": listTitle = "MECH Inspection 1 Schedule"; break;
+    case "MECH Insp 2": listTitle = "MECH Inspection 2 Schedule"; break;
+    case "MECH Insp 3": listTitle = "MECH Inspection 3 Schedule"; break;
+    case "TEST Oper 1": listTitle = "TEST Operation 1 Schedule"; break;
+    case "TEST Oper 2": listTitle = "TEST Operation 2 Schedule"; break;
+    case "FINAL Insp": listTitle = "Final Inspection Schedule"; break;
+    case "PACK / SHIP": listTitle = "Pack Schedule"; break;
+    case "END": listTitle = "Shipment Authorization"; break;
+    default: listTitle = "ERROR";
+  }
+  return listTitle;
+  }; //End code2List
