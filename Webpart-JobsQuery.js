@@ -16,6 +16,7 @@ else $("head").append('<link href="/javascripts/Webpart-Jobs%20Query.css" rel="s
 $("body").append('<table Class=assyList style="display:none;"><tbody><tr><td class=assySelect>cancel</td></tr></tbody></table>');
 
 setupProductionWindow();
+UserGuide("Jobs Query Tool");
 
 $("input#searchInput").select().focus().click(function(){$("input#searchInput").keydown();});
 $("input#searchInput").keydown(function(){
@@ -154,6 +155,7 @@ function getE2jobcomments(jobNo){
 var dfd = $.Deferred();
 var jobQuery = "/AJAX/jcfjm.aspx?Job=" + jobNo;
 var e2info = "E2 Job Comments <br /><br />";
+var commentType;
 
 $(".e2comment").text("");
 jQuery.ajax({
@@ -162,7 +164,10 @@ jQuery.ajax({
   success:function(data){
     if($(data).find(".E2job_no").text().length > 0){
       $(data).find(".E2print_type").each(function(i){
-        e2info += "<b>Comments-" + $(this).text() + "</b><br/>" + $(this).next().text().replace(/\|/g, "<br />") + "<br/><br/>";
+        commentType = $(this).text();
+        if(commentType != "NP") {
+          e2info += "<b>Comments-" + $(this).text() + "</b><br/>" + $(this).next().text().replace(/\|/g, "<br />") + "<br/><br/>";
+        }
       });
     }else { e2info = "<b>E2 Job Information</b><br />Job No. not found on EII"; }
     $("#JQe2Comment").append(e2info);
