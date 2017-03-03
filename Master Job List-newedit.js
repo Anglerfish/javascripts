@@ -154,7 +154,6 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
 
 //internal function to update Master Assembly List if ncessary
 function updateMAL(assyID,description){
-  alert("hello");
   $.when(getListID("Master Assembly List",assyID)).done(function(listID) {
     var pairVal = [["Description", description]];
     if($.isNumeric(listID)) {
