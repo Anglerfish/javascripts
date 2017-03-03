@@ -100,6 +100,7 @@ if(!browseris.ie5up) { for(var i in CKEDITOR.instances) { CKEDITOR.instances[i].
 var changeVal = readFields();
 var jobNo = changeVal.Title;
 //  console.log(jobNo + "start");
+
 if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
     
   $("td#loadStatus").css("color","green").text("Loading");
@@ -110,6 +111,7 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
   var deferreds = [];
   var PEPLid;
   var PEPLr1;
+
   $().SPServices({
     operation: "GetListItems",
     async: true,
@@ -120,7 +122,8 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
     CAMLQuery: "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + jobNo + "</Value></Eq></Where></Query>",
     completefunc: function (xData, Status) {
       PEPLid = $(xData.responseXML).SPFilterNode("z:row").attr("ows_ID");
-      deferreds.push(updatePEPL(PEPLid, changeFieldNames, changeVal));
+      updatePEPL(PEPLid, changeFieldNames, changeVal);
+      updateMAL(changeVal.Dorigo_x0020_Assy_x0023_,changeVal.Description);
       
       if (typeof(PEPLid) != "undefined") {
         PEPLr1 = $(xData.responseXML).SPFilterNode("z:row").attr("ows_Routing_x0020_1");
@@ -149,9 +152,21 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
   if(saveSubmit == true) { $("INPUT[ID$='diidIOSaveItem']:first").click();}
 }
 
+//internal function to update Master Assembly List if ncessary
+function updateMAL(assyID,description){
+  alert("hello");
+  $.when(getListID("Master Assembly List",assyID)).done(function(listID) {
+    var pairVal = [["Description", description]];
+    if($.isNumeric(listID)) {
+      deferreds.push(updateListItem("Master Assembly List", listID, pairVal));
+    } else {
+      deferreds.push(createListItem("Master Assembly List", assyID, pairVal));
+    }
+  });
+}//End internal function updateMAL
+
 //internal function to compare changes to fields related to PE Prioritization List
   function updatePEPL(listID, changeFieldNames, changeVal){
-    var dfdPEPL = $.Deferred();
     var updateQuery = new Array();
     var temp1 = false;
 
@@ -184,9 +199,7 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
       deferreds.push(createListItem("PE Prioritization List", jobNo, updateQuery));
       $("td#loadPEPL").text("PE prioritization List created");
     }
-    dfdPEPL.resolve();
 
-    return dfdPEPL.promise();
   } //End internal function updatePEPL
 
 //internal function to compare changes to fields related to Production Process steps
