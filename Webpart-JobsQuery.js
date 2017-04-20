@@ -5,7 +5,7 @@ var assyID;
 var i;
 var temp1;
 var temp3;
-
+var e2Hidden = false;
 var typeTime = 1000;
 var stopTimer;
 
@@ -17,6 +17,7 @@ $("body").append('<table Class=assyList style="display:none;"><tbody><tr><td cla
 
 setupProductionWindow();
 UserGuide("Jobs Query Tool");
+$("img[alt='Web Part Page Title Bar image']").click(function(){e2Hidden = true;});
 
 $("input#searchInput").select().focus().click(function(){$("input#searchInput").keydown();});
 $("input#searchInput").keydown(function(){
@@ -167,6 +168,10 @@ jQuery.ajax({
         commentType = $(this).text();
         if(commentType != "NP") {
           e2info += "<b>Comments-" + $(this).text() + "</b><br/>" + $(this).next().text().replace(/\|/g, "<br />") + "<br/><br/>";
+        } else {
+          if(e2Hidden == true){
+            e2info += "<span id=e2HiddenText><b>Comments-" + $(this).text() + "</b><br/>" + $(this).next().text().replace(/\|/g, "<br />") + "<br/><br/></span>";
+          }
         }
       });
     }else { e2info = "<b>E2 Job Information</b><br />Job No. not found on EII"; }
