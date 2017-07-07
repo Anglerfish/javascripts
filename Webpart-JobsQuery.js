@@ -14,10 +14,11 @@ $(document).ready(function() {
 if(browseris.ie5up) $("head").append('<link href="http://server1:8086/javascripts/Webpart-Jobs%20Query.css" rel="stylesheet" type="text/css">');
 else $("head").append('<link href="/javascripts/Webpart-Jobs%20Query.css" rel="stylesheet" type="text/css">');
 $("body").append('<table Class=assyList style="display:none;"><tbody><tr><td class=assySelect>cancel</td></tr></tbody></table>');
+$("img[alt='Web Part Page Title Bar image']").click(function(){e2Hidden = true;});
 
 setupProductionWindow();
+setupFlagWindow();
 UserGuide("Jobs Query Tool");
-$("img[alt='Web Part Page Title Bar image']").click(function(){e2Hidden = true;});
 
 $("input#searchInput").select().focus().click(function(){$("input#searchInput").keydown();});
 $("input#searchInput").keydown(function(){
@@ -96,6 +97,7 @@ var routeTable = "<table Class=routingDis><tbody>"+
 
 
 $("#routingAnchor").append(routeTable);
+$("input#engFlag").show();
 
 getRouting(jobNo);
 
@@ -505,3 +507,63 @@ $().SPServices({
   }
 });
 }
+
+function setupFlagWindow() {
+  $("body").append("<input id=engFlag type=button value='Engineering Flag' onclick=gotoEngFlag(); style='display:none;' />"+
+    "<table id=flagWindow style='display:none;'><tbody><tr><td>Engineering Flag:<br /><br /><textarea rows='15' class='ckeditor comments' name='flagComment' id='flagComment'></textarea></td></tr>"+
+    "<tr><td><input id=flagSave type=button value='Save Flag' style='float:right;' onclick=flagSave(); /></td></tr></tbody></table><span id=flagCloser style='display:none;'>x</span>"+
+    "<div id=flagOverlay style='display:none;'></div><div id=flagSaveStatus style='display:none;'><br />&nbsp;Saving...</div>");
+  CKEDITOR.replace( 'flagComment', {toolbarStartupExpanded : false} );
+    
+  $("span#flagCloser").click(function(){
+    $("div#flagOverlay").hide();
+    $("table#flagWindow").hide();
+    $("span#flagCloser").hide();
+  });
+  
+  $("div#flagOverlay").click(function(){
+    $("span#flagCloser").click();
+  });
+}
+
+function gotoEngFlag() {
+var engAssyID= $("span#JQassy").text();
+$().SPServices({
+  operation: "GetListItems",
+  async: true,
+  listName: "Master Assembly List",
+  CAMLViewFields: "<ViewFields><FieldRef Name='Engineering_x0020_Flag' /><FieldRef Name='ID' /></ViewFields>",
+  CAMLRowLimit: 1,
+  CAMLQueryOptions: myQueryOptions,
+  CAMLQuery: "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + engAssyID + "</Value></Eq></Where></Query>",
+  completefunc: function (xData, Status) {
+    CKEDITOR.instances["flagComment"].setData($(xData.responseXML).SPFilterNode("z:row").attr("ows_Engineering_x0020_Flag"));
+    $("input#flagSave").unbind('click').click(function(){flagSave($(xData.responseXML).SPFilterNode("z:row").attr("ows_ID"))});
+    $("div#flagOverlay").show();
+    $("table#flagWindow").show();
+    $("span#flagCloser").show();
+//    CKEDITOR.instances["flagComment"].focusManager.focus(true);
+$("body.cke_editable").focus();
+}
+});
+  
+}//End gotoEngFlag
+
+function flagSave (flagID){
+var flagComment = escapeHTML(CKEDITOR.instances["flagComment"].getData());
+$().SPServices({
+  operation: "UpdateListItems",
+  beforeSend: function() { $("div#flagSaveStatus").show(); },
+  async: true,
+  batchCmd: "Update",
+  ID:flagID,
+    listName: "Master Assembly List",
+    valuepairs: [["Engineering_x0020_Flag",flagComment]],
+    completefunc: function(xData, Status) {
+      if($(xData.responseXML).SPFilterNode('ErrorText').text().length > 0) {    }
+      $("span#flagCloser").click();
+      $("div#flagSaveStatus").hide();
+    }
+  }); //SPServices
+  
+};

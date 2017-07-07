@@ -29,6 +29,9 @@ setTimeout(function(){
 //added 1 second delay because IE cannot get the comment box setup right after document ready
   originVal = readFields();
 //  $("div.e2table").append(pingFields());
+  if(originVal.Dorigo_x0020_Assy_x0023_ != "") {
+    flagChecker(originVal.Dorigo_x0020_Assy_x0023_);
+  }
 },1000);
 
 //data initialization complete
@@ -68,10 +71,10 @@ $(".E2toSP").mousedown(function(e){
     $("INPUT[title='Description']").attr("value",$(".E2description").text());
     $("INPUT[title='Cust Assy ID']").attr("value",$(".E2cust_assy_id").text());
     $("INPUT[title='Dorigo Assy ID']").attr("value",$(".E2dorigo_assy_id").text());
-    $("SELECT[title='Order Type']").val($(".E2order_type").text().replace(/ /g,""));
-    if( $(".E2stores_code").text().replace(/ /g,"") == "MS"){
+    $("SELECT[title='Order Type']").val($(".E2order_type").text().replace(/\s+/g,''));
+    if( $(".E2stores_code").text().replace(/\s+/g,'') == "MS"){
       $("SELECT[title='Job Type']").val("Stock-MS");
-    }else if($(".E2job_type").text().replace(/ /g,"")=="S"){
+    }else if($(".E2job_type").text().replace(/\s+/g,'')=="S"){
       $("SELECT[title='Job Type']").val("Stock-FG");
     }else { $("SELECT[title='Job Type']").val("C - Customer Order");};
     $("INPUT[title='Job Qty']").attr("value",parseInt($(".E2job_qty").text(),10));
@@ -79,20 +82,27 @@ $(".E2toSP").mousedown(function(e){
     $("INPUT[title='Target Ship Date']").attr("value",$(".E2target_ship_date").text());
     //edit select field for customer
     $("SELECT[title='Customer'] option:selected").removeAttr("selected");
-    var temp2 = $(".E2customer").text().toLowerCase().replace(/ /g,"");
+    var temp2 = $(".E2customer").text().toLowerCase().replace(/\s+/g,'');
     var temp1 = temp2.length;
     if(temp2.slice(temp1 - 3, temp1) == "rwk") temp1 -= 3 ;  
     temp2 = temp2.slice(0, temp1);
     $("SELECT[title='Customer'] option").filter(function(){
-      if( this.value.toLowerCase().replace(/ /g,"").slice(0,temp1) == temp2 ) {
+      if( this.value.toLowerCase().replace(/\s+/g,'').slice(0,temp1) == temp2 ) {
         temp2 = "";
         return true;
       } else return false;
     }).attr("selected","selected");
+    flagChecker($(".E2dorigo_assy_id").text());
   }
 });
 
 });
+
+$("input[title='Dorigo Assy ID']").focusout(function(){
+  $(this).val($(this).val().replace(/\s+/g,''));
+  flagChecker($(this).val());
+});
+
 }; // End MasterJobListEdit
 
 function loadSubmit(originVal,saveSubmit){
@@ -460,7 +470,7 @@ function code2List(codeName) {
     case "CC Insp 1": listTitle = "CC Inspection 1 Schedule"; break;
     case "MECH Oper 1": listTitle = "MECH Operation 1 Schedule"; break;
     case "MECH Oper 2": listTitle = "MECH Operation 2 Schedule"; break;
-    case "MECH Oper 3": listTitle = "MECH Operation 3 Schedule"; break;
+    case "MECH Oper 3": listTitle = "MECH Operation 3 Schedule"; break; 
     case "MECH Insp 1": listTitle = "MECH Inspection 1 Schedule"; break;
     case "MECH Insp 2": listTitle = "MECH Inspection 2 Schedule"; break;
     case "MECH Insp 3": listTitle = "MECH Inspection 3 Schedule"; break;
@@ -472,4 +482,61 @@ function code2List(codeName) {
     default: listTitle = "ERROR";
   }
   return listTitle;
-  }; //End code2List
+}; //End code2List
+  
+function flagChecker(assyID){
+  if(typeof assyID != "undefined") {
+    assyID = assyID.replace(/\s+/g,'');
+  }
+  var tempChecker = $("table#flagChecker").attr("title1");
+  if(tempChecker != assyID) {
+    $("table#flagChecker").remove();
+    $("body").append("<table id=flagChecker title=" + assyID + " style=''><tbody><tr><td id=flagCheckerTitle colspan=2 ><span id=flagMinimizer>v</span>&nbsp;Flags for " + assyID + "</td></tr><tr><td class=flagTitle>Engineering Flag</td><td class=flagTitle>Operation Flag</td></tr><tr>" +
+                     "<td id=engFlagText class=flagText>&nbsp;</td>" +
+                     "<td id=opFlagText class=flagText>&nbsp;</td>" +
+                     "</tr></tbody></table>");
+    $("table#flagChecker").css("bottom", (0 - $(window).scrollTop()) + "px").css("left",$(window).scrollLeft() + "px");
+    $(window).on("load resize scroll", function(){
+      $("table#flagChecker").css("bottom", (0 - $(window).scrollTop()) + "px").css("left",$(window).scrollLeft() + "px");
+    });
+
+    $("span#flagMinimizer").click(function(){
+      if($(this).text() == "v") {
+        $(this).text("^");
+        $("td.flagText, td.flagTitle").hide();
+        if(($("td#engFlagText").text().replace(/\s+/g,'').length + $("td#opFlagText").text().replace(/\s+/g,'').length)== 0) {
+          $("table#flagChecker").css("background-color","green");
+          $(this).css("background-color","green");
+        } else $("table#flagChecker").css("background-color","red");
+      } else {
+        $(this).text("v").css("background-color","red");
+        $("td.flagText, td.flagTitle").show();
+        $("table#flagChecker").css("background-color","steelBlue");
+      }
+    });
+    
+    $().SPServices({
+      operation: "GetListItems",
+      async: true,
+      listName: "Master Assembly List",
+      CAMLViewFields: "<ViewFields><FieldRef Name='Engineering_x0020_Flag' /></ViewFields>",
+      CAMLRowLimit: 1,
+      CAMLQueryOptions: myQueryOptions,
+      CAMLQuery: "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + assyID + "</Value></Eq></Where></Query>",
+      completefunc: function (xData, Status) {
+        if($(xData.responseXML).SPFilterNode("rs:data").attr("ItemCount") == 0) {
+          $("td#flagCheckerTitle").text("ASSEMBLY ID NOT FOUND");
+          $("table#flagChecker").css("background-color","orange");
+          $("td.flagText, td.flagTitle").hide();
+        } else {
+          $("td#engFlagText").html($(xData.responseXML).SPFilterNode("z:row").attr("ows_Engineering_x0020_Flag"));
+          $("td#opFlagText").html($(xData.responseXML).SPFilterNode("z:row").attr("ows_Operations_x0020_Flag"));
+          if(($("td#engFlagText").text().replace(/\s+/g,'').length + $("td#opFlagText").text().replace(/\s+/g,'').length)== 0) {
+            $("span#flagMinimizer").click();
+          }
+        }
+
+      }
+    });
+  }    
+} //End flagChecker
