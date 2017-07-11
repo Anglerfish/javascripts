@@ -21,10 +21,6 @@ function loadScript(url, callback) {
   script.src = url;
   document.getElementsByTagName("head")[0].appendChild(script);
 }
-if(!window.jQuery){
-  loadScript("/jquery.min.js", function () {
-  });
-}
 loadScript("/jquery.SPServices-0.7.1a.min.js",function() {
 });
 
@@ -33,30 +29,36 @@ loadScript("/jquery.SPServices-0.7.1a.min.js",function() {
 
 jQuery(document).ready(function(){
 
-  if(browseris.ie5up) jQuery("head").append('<link href="http://server1:8086/javascripts/masterpage.css" rel="stylesheet" type="text/css" />');
-  else jQuery("head").append('<link href="/javascripts/masterpage.css" rel="stylesheet" type="text/css" />');
-  
-  jQuery("input#sqlSearch").keyup(function(e){
-    clearTimeout(stopTimer);
-    stopTimer = setTimeout(function(){
-    searchRefine(jQuery("input#sqlSearch").val());
-    },typeTime);
-  });
+//SharePoint Banner
+var eventStart = new Date("April 13, 2017 00:00:00");  
+var eventExpire = new Date("April 17, 2017 00:00:00");  
+var now = new Date();
+//if(eventStart < now && eventExpire >= now  ) {
+  $("body").append('<div id=headerPic><img src="/images/sharepointbanner.png" alt="night"></div>');
+  $("div#headerPic").css({"position":"absolute","top":0,"right":0,"z-index":-100,"display":"none"}).show();
+//}
+ 
+jQuery("input#sqlSearch").keyup(function(e){
+  clearTimeout(stopTimer);
+  stopTimer = setTimeout(function(){
+  searchRefine(jQuery("input#sqlSearch").val());
+  },typeTime);
+});
 
-  jQuery("img#sqlSearchImg").click(function(){ searchRefine(jQuery("input#sqlSearch").val()); });
+jQuery("img#sqlSearchImg").click(function(){ searchRefine(jQuery("input#sqlSearch").val()); });
 
-  var elems = document.getElementsByTagName('div'), i;
-  for (i in elems) {
-    if((" " + elems[i].className + " ").indexOf(" ms-quicklaunchouter ") > -1) {
-      elems[i].innerHTML += "<button class=buttons onClick=henri()>TEXT Henri</button><br /><button class=buttons onClick=paolo()>TEXT Paolo</button><br />";
+var elems = document.getElementsByTagName('div'), i;
+for (i in elems) {
+  if((" " + elems[i].className + " ").indexOf(" ms-quicklaunchouter ") > -1) {
+    elems[i].innerHTML += "<button class=buttons onClick=henri()>TEXT Henri</button><br /><button class=buttons onClick=paolo()>TEXT Paolo</button><br />";
 //      <button class=buttons onClick=daniel()>TEXT Daniel</button><br />
-    }
   }
+}
 });
 }
 
 function henri(){
-  location.href="mailto:6045213104@fido.ca?body=Hi Henri,";
+  location.href="mailto:6045213104@msg.telus.com?body=Hi Henri,";
 };
 function paolo(){
   location.href="mailto:6048172884@msg.telus.com?body=Hi Paolo,";
