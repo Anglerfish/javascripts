@@ -14,6 +14,30 @@ $("input.miQuoteNo").on("keyup change",function() {
   $(this).val().length <= 1?$(this).width(16):$(this).width($(this).val().length*16);
 });
 
+$("input#miDate").on("change",function(){
+  if($(this).val().length == 0) {
+    var now = new Date();
+    now = (now.getMonth()<10?"0":"") + (now.getMonth() + 1) + "/" + (now.getDate()<10?"0":"") + now.getDate() + "/" + now.getFullYear();
+    now = now.substr(0,6) + now.substr(8,2);
+    $(this).val(now).css("color","black");
+    validEntry[$(this).attr("id")] = true;
+  } else if ($(this).val().length != 8){
+    $(this).css("color","red");
+    validEntry[$(this).attr("id")] = false;
+    alert("Date format must be MM/DD/YY");
+  } else {
+    var tempDate = $(this).val();
+    if($.isNumeric(tempDate.substr(0,2)) && $.isNumeric(tempDate.substr(3,2)) && $.isNumeric(tempDate.substr(6,2)) && tempDate.substr(2,1) == "/" && tempDate.substr(5,1) == "/"){
+      $(this).css("color","black");
+      validEntry[$(this).attr("id")] = true;
+    } else {
+      $(this).css("color","red");
+      validEntry[$(this).attr("id")] = false;
+      alert("Date format must be MM/DD/YY");
+    }
+  }
+}).change();
+
 forceNum($("input#miSMTUP"));
 forceNum($("input#miSMTTopA"));
 forceNum($("input#miSMTBotA"));
@@ -63,9 +87,18 @@ $("input#miMechGeneric,input#miMechPressFit, input#miMechOther").change(function
   $("div#miMechHard").text(checkAndSum($("input#miMechGeneric").val(),$("input#miMechPressFit").val(),$("input#miMechOther").val()));
 });
 
-$("body").append("<table id=MImenu><tbody><tr><td><input id=MIsave type=button value=Save /></td></tr><tr><td><input id=MIprint type=button value='Print & Submit' /></td></tr><tr><td><input id=MIcancel type=button value='Close without Save' /></td></tr></tbody></table>");
-$("input#MIsave").click(function() {
-  saveFormData(miFormID);
+$("body").append("<table id=MImenu><tbody><tr><td class=MIbutton><input id=MIsave type=button value=Save /></td></tr><tr><td class=MIbutton><input id=MIprint type=button value='Submit & Print' /></td></tr><tr><td class=MIbutton><input id=MIcopy type=button value='Save As New Quote' /></td></tr><tr><td class=MIsearchbox><input type=text id=MIsearch value='Search Quote' /></td></tr></tbody></table>");
+
+$("input#MIsearch").focus(function() {
+  if($(this).val() == "Search Quote") $(this).val("").css("color","black");
+}).focusout(function(){
+  if($(this).val().length == 0) $(this).val("Search Quote").css("color","gray");
+});
+
+$("input#MIsave").click(function() { saveFormData(miFormID,true); });
+$("input#MIprint").click(function() { 
+  var tempPP = validCheck();
+  alert(tempPP.length + " " + tempPP);
 });
 
 connectFormData();
@@ -75,7 +108,6 @@ connectFormData();
 function connectFormData() {
 if(typeof loadData != "undefined") {
   loadData.done(function(xData) {
-    //alert($(xData.responseXML).SPFilterNode("z:row").attr("ows_ID"));
     $("input.miQuoteNo").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Title")).change();
     $("input#miCustomer").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer"));
     $("input#miDescription").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Description"));
@@ -134,14 +166,7 @@ if(typeof loadData != "undefined") {
   //Private function to convert SP date to normal date
   function dateDecipher(n) {
     if(typeof n != "undefined") {
-      if(n != "") {
-        return n.substr(5,2) + "/" + n.substr(8,2) + "/" + n.substr(2,2);      
-      } else {
-        var now = new Date();
-        now = (now.getMonth()<10?"0":"") + (now.getMonth() + 1) + "/" + (now.getDate()<10?"0":"") + now.getDate() + "/" + now.getFullYear();
-        now = now.substr(0,6) + now.substr(8,2);
-        return now;
-      }
+      return n.substr(5,2) + "/" + n.substr(8,2) + "/" + n.substr(2,2);      
     } else {
       var now = new Date();
       now = (now.getMonth()<10?"0":"") + (now.getMonth() + 1) + "/" + (now.getDate()<10?"0":"") + now.getDate() + "/" + now.getFullYear();
@@ -170,68 +195,84 @@ $().SPServices({
   return dfd.promise();
 }//End loadFormData
 
-function saveFormData(miFormID) {
-if(validCheck() == false) { alert("Error in one or more of your Entries. Data NOT saved"); }
-else {
-var updateQuery = [["Title", $("input.miQuoteNo").val()],
-["Customer", $("input#miCustomer").val()],
-["Description", $("input#miDescription").val()],
-["Dorigo_x0020_Assembly_x0020_ID", $("input#miAssyID").val()],
-["Contacts", $("input#miContacts").val()],
-["Customer_x0020_Assembly_x0020_ID", $("input#miCusAssyID").val()],
-["Revision", $("input#miCusRev").val()],
-["Date", SPdateConverter($("input#miDate").val())],
-["Process_x0020_Engineer", $("input#miPE").val()],
-["Quote_x0020_Qty", $("input#miExpQty").val()],
-["Job_x0020_Type", $("input#miJobType").val()],
-["PCB_x0020_Size", $("input#miPCBSize").val()],
-["PCB_x0020_Thickness", $("input#miPCBThickness").val()],
-["Boards_x0020_per_x0020_Panel", $("input#miPanel").val()],
-["Number_x0020_of_x0020_Layers", $("input#miPCBLayers").val()],
-["PCB_x0020_Finish", $("select#miPCBFinish").val()],
-["Smallest_x0020_Landpattern", $("select#miLandSize").val()],
-["Smallest_x0020_pitch", $("input#miPitch").val()],
-["SMT_x0020_Unique_x0020_Parts", $("input#miSMTUP").val()],
-["SMT_x0020_Top_x0020_Auto", $("input#miSMTTopA").val()],
-["SMT_x0020_Bot_x0020_Auto", $("input#miSMTBotA").val()],
-["SMT_x0020_Top_x0020_Manual", $("input#miSMTTopM").val()],
-["SMT_x0020_Bot_x0020_Manual", $("input#miSMTBotM").val()],
-["SMT_x0020_Top", $("div#miSMTTopTotal").text()],
-["SMT_x0020_Bot", $("div#miSMTBotTotal").text()],
-["SMT_x0020_Auto", $("div#miSMTA").text()],
-["SMT_x0020_Manual", $("div#miSMTM").text()],
-["SMT_x0020_Placement_x0020_Total", $("div#miSMT").text()],
-["SMT_x0020_Hand", $("input#miSMTHandComp").val()],
-["SMT_x0020_Hand_x0020_Pins", $("input#miSMTHandPins").val()],
-["SMT_x0020_Program", $("select#miSMTprogram").val()],
-["SMT_x0020_Stencil", $("select#miStencilNumber").val()],
-["SMT_x0020_Top_x0020_Stencil_x002", $("select#miStencilTopSize").val()],
-["SMT_x0020_Top_x0020_Stencil_x0020", $("select#miStencilTop").val()],
-["SMT_x0020_Bot_x0020_Stencil_x002", $("select#miStencilBotSize").val()],
-["SMT_x0020_Bot_x0020_Stencil_x0020", $("select#miStencilBot").val()],
-["SMT_x0020_Special", ($("input#miSMTBGA").prop("checked")==true?"BGA ":"")+ 
-($("input#miSMTLGA").prop("checked")==true?"LGA ":"") +
-($("input#miSMTLeadless").prop("checked")==true?"Leadless ":"") +
-($("input#miSMTModule").prop("checked")==true?"Module ":"")],
-["SMT_x0020_Others", $("input#miSMTOtherDeviceInfo").val()],
-["Wave_x0020_Solder_x0020_Parts", $("input#miTHWave").val()],
-["Wave_x0020_Solder_x0020_Pins", $("input#miTHWavePin").val()],
-["Hand_x0020_Solder_x0020_Parts", $("input#miTHHand").val()],
-["Hand_x0020_Solder_x0020_Pins", $("input#miTHHSPin").val()],
-["Pin_x0020_Cutting_x0020_Parts", $("input#miTHCut").val()],
-["TH_x0020_Component_x0020_Forming", $("input#miTHForm").val()],
-["TH_x0020_Total", $("div#miTH").text()],
-["Selctive_x0020_Wave_x0020_Progra", $("select#miTHSelectProgram").val()],
-["Wave_x0020_Pallet", $("select#miTHWavePallet").val()],
-["Mech_x0020_Estimated_x0020_Minut", $("input#miMECHMins").val()],
-["Mech_x0020_Generic", $("input#miMechGeneric").val()],
-["Mech_x0020_Press_x0020_Fits", $("input#miMechPressFit").val()],
-["Mech_x0020_Other", $("input#miMechOther").val()],
-["Test_x0020_Minutes", $("input#miTestMin").val()],
-["Modification", $("select#miMod").val()],
-//["Conformal_x0020_Coating", $("select#miCC").val()]];
-["Conformal_x0020_Coating", $("select#miCC").val()],
-["Comments_x0020_from_x0020_PE", escapeHTML($("textarea#commentsPE").html().replace(/[\n]/g,'<br>'))]];
+function saveFormData(miFormID,submit) {
+var checkedValue = validCheck();
+var updateQuery= [["Title", $("input.miQuoteNo").val()],
+  ["Customer", $("input#miCustomer").val()],
+  ["Description", $("input#miDescription").val()],
+  ["Dorigo_x0020_Assembly_x0020_ID", $("input#miAssyID").val()],
+  ["Contacts", $("input#miContacts").val()],
+  ["Customer_x0020_Assembly_x0020_ID", $("input#miCusAssyID").val()],
+  ["Revision", $("input#miCusRev").val()],
+  ["Process_x0020_Engineer", $("input#miPE").val()],
+  ["Quote_x0020_Qty", $("input#miExpQty").val()],
+  ["Job_x0020_Type", $("input#miJobType").val()],
+  ["PCB_x0020_Size", $("input#miPCBSize").val()],
+  ["PCB_x0020_Thickness", $("input#miPCBThickness").val()],
+  ["Boards_x0020_per_x0020_Panel", $("input#miPanel").val()],
+  ["Number_x0020_of_x0020_Layers", $("input#miPCBLayers").val()],
+  ["PCB_x0020_Finish", $("select#miPCBFinish").val()],
+  ["Smallest_x0020_Landpattern", $("select#miLandSize").val()],
+  ["Smallest_x0020_pitch", $("input#miPitch").val()],
+  ["SMT_x0020_Unique_x0020_Parts", $("input#miSMTUP").val()],
+  ["SMT_x0020_Top_x0020_Auto", $("input#miSMTTopA").val()],
+  ["SMT_x0020_Bot_x0020_Auto", $("input#miSMTBotA").val()],
+  ["SMT_x0020_Top_x0020_Manual", $("input#miSMTTopM").val()],
+  ["SMT_x0020_Bot_x0020_Manual", $("input#miSMTBotM").val()],
+  ["SMT_x0020_Hand", $("input#miSMTHandComp").val()],
+  ["SMT_x0020_Hand_x0020_Pins", $("input#miSMTHandPins").val()],
+  ["SMT_x0020_Program", $("select#miSMTprogram").val()],
+  ["SMT_x0020_Stencil", $("select#miStencilNumber").val()],
+  ["SMT_x0020_Top_x0020_Stencil_x002", $("select#miStencilTopSize").val()],
+  ["SMT_x0020_Top_x0020_Stencil_x0020", $("select#miStencilTop").val()],
+  ["SMT_x0020_Bot_x0020_Stencil_x002", $("select#miStencilBotSize").val()],
+  ["SMT_x0020_Bot_x0020_Stencil_x0020", $("select#miStencilBot").val()],
+  ["SMT_x0020_Special", ($("input#miSMTBGA").prop("checked")==true?"BGA ":"")+ 
+  ($("input#miSMTLGA").prop("checked")==true?"LGA ":"") +
+  ($("input#miSMTLeadless").prop("checked")==true?"Leadless ":"") +
+  ($("input#miSMTModule").prop("checked")==true?"Module ":"")],
+  ["SMT_x0020_Others", $("input#miSMTOtherDeviceInfo").val()],
+  ["Wave_x0020_Solder_x0020_Parts", $("input#miTHWave").val()],
+  ["Wave_x0020_Solder_x0020_Pins", $("input#miTHWavePin").val()],
+  ["Hand_x0020_Solder_x0020_Parts", $("input#miTHHand").val()],
+  ["Hand_x0020_Solder_x0020_Pins", $("input#miTHHSPin").val()],
+  ["Pin_x0020_Cutting_x0020_Parts", $("input#miTHCut").val()],
+  ["TH_x0020_Component_x0020_Forming", $("input#miTHForm").val()],
+  ["Selctive_x0020_Wave_x0020_Progra", $("select#miTHSelectProgram").val()],
+  ["Wave_x0020_Pallet", $("select#miTHWavePallet").val()],
+  ["Mech_x0020_Estimated_x0020_Minut", $("input#miMECHMins").val()],
+  ["Mech_x0020_Generic", $("input#miMechGeneric").val()],
+  ["Mech_x0020_Press_x0020_Fits", $("input#miMechPressFit").val()],
+  ["Mech_x0020_Other", $("input#miMechOther").val()],
+  ["Test_x0020_Minutes", $("input#miTestMin").val()],
+  ["Modification", $("select#miMod").val()],
+  //["Conformal_x0020_Coating", $("select#miCC").val()]];
+  ["Conformal_x0020_Coating", $("select#miCC").val()],
+  ["Comments_x0020_from_x0020_PE", escapeHTML($("textarea#commentsPE").html().replace(/[\n]/g,'<br>'))]];
+
+var dateCheck = true;
+var numCheck = true;
+if (checkedValue.length != 0) {
+  for( var i = 0; i < checkedValue.length; i++){
+    if(checkedValue[i] == "miDate") dateCheck = false;
+    else numCheck = false;
+  }
+}
+
+if(dateCheck == true) updateQuery.push(["Date", SPdateConverter($("input#miDate").val())]);
+if(numCheck == true) {
+  updateQuery.push(  ["SMT_x0020_Top", $("div#miSMTTopTotal").text()],
+  ["SMT_x0020_Bot", $("div#miSMTBotTotal").text()],
+  ["SMT_x0020_Auto", $("div#miSMTA").text()],
+  ["SMT_x0020_Manual", $("div#miSMTM").text()],
+  ["SMT_x0020_Placement_x0020_Total", $("div#miSMT").text()],
+  ["TH_x0020_Total", $("div#miTH").text()],
+  ["Mech_x0020_Hardware", $("div#miMechHard").text()]);
+}
+
+if(submit == true && checkedValue.length != 0) { alert("Quote NOT Submitted.\nError in one or more of your Entries. Data saved."); }
+if(submit == true && checkedValue.length == 0) {//Add submit into push
+}
 
 if(miFormID != "new"){
   $().SPServices({
@@ -256,8 +297,6 @@ if(miFormID != "new"){
     alert(Status);
     }
   });
-}
-
 }
 
   //Private function to convert date variable to Sharepoint date input. Remove date information
@@ -330,7 +369,7 @@ return chkStatus;
 } //End text2checkBox
 
 function validCheck() {
-  var temp1 = true;
-  for(var temp2 in validEntry) if(validEntry[temp2] == false) temp1 = false;
+  var temp1 = [];
+  for(var temp2 in validEntry) if(validEntry[temp2] == false) temp1.push(temp2);
   return temp1;
 } //End validCheck
