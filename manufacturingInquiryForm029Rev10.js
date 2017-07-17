@@ -95,10 +95,9 @@ $("input#MIsearch").focus(function() {
   if($(this).val().length == 0) $(this).val("Search Quote").css("color","gray");
 });
 
-$("input#MIsave").click(function() { saveFormData(miFormID,true); });
+$("input#MIsave").click(function() { saveFormData(miFormID,false); });
 $("input#MIprint").click(function() { 
-  var tempPP = validCheck();
-  alert(tempPP.length + " " + tempPP);
+  saveFormData(miFormID,true);
 });
 
 connectFormData();
@@ -159,7 +158,8 @@ if(typeof loadData != "undefined") {
     $("input#miTestMin").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Test_x0020_Minutes")));
     $("select#miMod").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Modification"));
     $("select#miCC").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Conformal_x0020_Coating"));
-    $("textarea#commentsPE").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Comments_x0020_from_x0020_PE").replace(/<[^\>]*>/g,""));
+    $("textarea#commentsPE").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Comments_x0020_from_x0020_PE")
+        .replace(/<[^\>]*>/g,"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&lt;/g,"<").replace(/&gt;/g,">"));
   });
   
 }
@@ -260,6 +260,7 @@ if (checkedValue.length != 0) {
 }
 
 if(dateCheck == true) updateQuery.push(["Date", SPdateConverter($("input#miDate").val())]);
+else updateQuery.push(["Date", ""]);
 if(numCheck == true) {
   updateQuery.push(  ["SMT_x0020_Top", $("div#miSMTTopTotal").text()],
   ["SMT_x0020_Bot", $("div#miSMTBotTotal").text()],
@@ -268,9 +269,16 @@ if(numCheck == true) {
   ["SMT_x0020_Placement_x0020_Total", $("div#miSMT").text()],
   ["TH_x0020_Total", $("div#miTH").text()],
   ["Mech_x0020_Hardware", $("div#miMechHard").text()]);
+} else {
+  updateQuery.push(  ["SMT_x0020_Top", ""],
+  ["SMT_x0020_Bot", ""],
+  ["SMT_x0020_Auto", ""],
+  ["SMT_x0020_Manual", ""],
+  ["SMT_x0020_Placement_x0020_Total", ""],
+  ["TH_x0020_Total", ""],
+  ["Mech_x0020_Hardware", ""]);
 }
 
-if(submit == true && checkedValue.length != 0) { alert("Quote NOT Submitted.\nError in one or more of your Entries. Data saved."); }
 if(submit == true && checkedValue.length == 0) {//Add submit into push
 }
 
@@ -283,7 +291,9 @@ if(miFormID != "new"){
     listName: "Manufacturing Inquiry",
     valuepairs: updateQuery,
     completefunc: function(xData, Status) {
-    alert(Status);
+      if(submit == true && checkedValue.length != 0) alert("Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
+      else if(submit == true && checkedValue.length == 0) alert("Manufacturing Inquiry Form saved and submitted");
+      else alert("Manufacturing Inquiry Form saved");
     }
   });
 } else {
@@ -294,7 +304,9 @@ if(miFormID != "new"){
     listName: "Manufacturing Inquiry",
     valuepairs: updateQuery,
     completefunc: function(xData, Status) {
-    alert(Status);
+      if(submit == true && checkedValue.length != 0) alert("New Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
+      else if(submit == true && checkedValue.length == 0) alert("New Manufacturing Inquiry Form saved and submitted");
+      else alert("New Manufacturing Inquiry Form created and saved");
     }
   });
 }
