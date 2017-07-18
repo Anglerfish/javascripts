@@ -169,6 +169,7 @@ function sqlSearch(msPageTitle,sqlSearchTerm,searchNum) {
         switch (msPageTitle) {
         case "Resume Applicant List": sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href='" + sqlAddress + "'>" + jQuery(this).attr("ows_Title")+ "</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_First_x0020_Name") + " " + jQuery(this).attr("ows_Last_x0020_Name") + "</span></td></tr>"; break;
         case "Manufacturing Inquiry Database": sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href='" + sqlAddress + "'>" + jQuery(this).attr("ows_Title")+ "</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_Customer") + " " + jQuery(this).attr("ows_Cust_x0020_Assy_x0020_ID") + "</span></td></tr>"; break;
+        case "Manufacturing Inquiry": sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href='/Department%20Forms/Engineering/Manufacturing%20Inquiry%20Form%20029Rev10-5.htm?itemID=" + jQuery(this).attr("ows_ID") + "&'>" + jQuery(this).attr("ows_Title")+ "</a>  <a href='" + sqlAddress + "'>edit</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_Customer") + "</span></td></tr>"; break;
         case "SMT-Placement Schedule": sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href=# class='pwlink' listName='" + msPageTitle + "' searchID='" + jQuery(this).attr("ows_ID") + "'>" + jQuery(this).attr("ows_Title")+ "</a>  <a href='" + sqlAddress + "'>edit</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_Customer") + "</span></td></tr>"; break;
         case "SMT Inspection Schedule": sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href=# class='pwlink' listName='" + msPageTitle + "' searchID='" + jQuery(this).attr("ows_ID") + "'>" + jQuery(this).attr("ows_Title")+ "</a>  <a href='" + sqlAddress + "'>edit</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_Customer") + "</span></td></tr>"; break;
         case "PTH Wave Schedule": sqlTableText += "<tr><td style='padding:0px 0px 8px 0px;'><a href=# class='pwlink' listName='" + msPageTitle + "' searchID='" + jQuery(this).attr("ows_ID") + "'>" + jQuery(this).attr("ows_Title")+ "</a>  <a href='" + sqlAddress + "'>edit</a><br /><span class=sqlCust>" + jQuery(this).attr("ows_Customer") + "</span></td></tr>"; break;
@@ -250,6 +251,7 @@ function sqlQueryBuilder(msPageTitle,sqlSearchTerm) {
   case "Quotation Log": sqlSearchField = {Title:"Text",Customer:"Text",Description:"Text"};break;
   case "Resume Applicant List": sqlSearchField = {Title:"Text",First_x0020_Name:"Text",Last_x0020_Name:"Text"}; break;
   case "Manufacturing Inquiry Database": sqlSearchField = {Title:"Text",Customer:"Text", Cust_x0020_Assy_x0020_ID:"Text",Dorigo_x0020_Assembly_x0020_ID:"Text"}; break;
+  case "Manufacturing Inquiry": sqlSearchField = {Title:"Text",Customer:"Text", Customer_x0020_Assembly_x0020_ID:"Text",Dorigo_x0020_Assembly_x0020_ID:"Text", Process_x0020_Engineer:"Text"}; break;
   default:sqlSearchField = {Title:"Text"};
   }
   
