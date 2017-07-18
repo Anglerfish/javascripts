@@ -76,14 +76,14 @@ $("input#miSMTBotM").on("keyup change",function(){
   $("div#miSMTM").text(checkAndSum($("input#miSMTTopM").val(),$("input#miSMTBotM").val()));
   $("div#miSMT").text(checkAndSum($("div#miSMTA").text(),$("div#miSMTM").text()));
 });
-$("input#miSMTOtherDeviceInfo").change(function() {
+$("input#miSMTOtherDeviceInfo").on("keyup change", function() {
   if($(this).val() != "") $("input#miSMTOtherDevice").prop("checked",true);
   else $("input#miSMTOtherDevice").prop("checked",false);
 });
-$("input#miTHWave,input#miTHHand").change(function(){
+$("input#miTHWave,input#miTHHand").on("keyup change", function(){
   $("div#miTH").text(checkAndSum($("input#miTHWave").val(),$("input#miTHHand").val()));
 });
-$("input#miMechGeneric,input#miMechPressFit, input#miMechOther").change(function(){
+$("input#miMechGeneric,input#miMechPressFit, input#miMechOther").on("keyup change", function(){
   $("div#miMechHard").text(checkAndSum($("input#miMechGeneric").val(),$("input#miMechPressFit").val(),$("input#miMechOther").val()));
 });
 
@@ -102,6 +102,13 @@ $("input#MIprint").click(function() {
 
 connectFormData();
 
+}).on('keydown', function(event) {
+    if (event.ctrlKey || event.metaKey) {
+      if(String.fromCharCode(event.which).toLowerCase() == "s") {
+        event.preventDefault();
+        $("input#MIsave").click();
+      }
+    }
 });
 
 function connectFormData() {
@@ -158,11 +165,14 @@ if(typeof loadData != "undefined") {
     $("input#miTestMin").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Test_x0020_Minutes")));
     $("select#miMod").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Modification"));
     $("select#miCC").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Conformal_x0020_Coating"));
-    $("textarea#commentsPE").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Comments_x0020_from_x0020_PE")
-        .replace(/<[^\>]*>/g,"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&lt;/g,"<").replace(/&gt;/g,">"));
+    $("textarea#commentsPE").val(returnHTML($(xData.responseXML).SPFilterNode("z:row").attr("ows_Comments_x0020_from_x0020_PE")));
   });
   
 }
+
+//convert SharePoint textbox to readable HTML
+function returnHTML(s) { return typeof(s) != "string"?"":s.replace(/<[^\>]*>/g,"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&lt;/g,"<").replace(/&gt;/g,">"); }
+
   //Private function to convert SP date to normal date
   function dateDecipher(n) {
     if(typeof n != "undefined") {
@@ -279,7 +289,8 @@ if(numCheck == true) {
   ["Mech_x0020_Hardware", ""]);
 }
 
-if(submit == true && checkedValue.length == 0) {//Add submit into push
+if(submit == true && checkedValue.length == 0) {
+  updateQuery.push(["PE_x0020_Complete","Yes"]);
 }
 
 if(miFormID != "new"){
@@ -292,7 +303,11 @@ if(miFormID != "new"){
     valuepairs: updateQuery,
     completefunc: function(xData, Status) {
       if(submit == true && checkedValue.length != 0) alert("Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
-      else if(submit == true && checkedValue.length == 0) alert("Manufacturing Inquiry Form saved and submitted");
+      else if(submit == true && checkedValue.length == 0) { 
+        alert("Manufacturing Inquiry Form saved and submitted");
+        window.print();
+        window.close();
+      }
       else alert("Manufacturing Inquiry Form saved");
     }
   });
@@ -305,7 +320,11 @@ if(miFormID != "new"){
     valuepairs: updateQuery,
     completefunc: function(xData, Status) {
       if(submit == true && checkedValue.length != 0) alert("New Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
-      else if(submit == true && checkedValue.length == 0) alert("New Manufacturing Inquiry Form saved and submitted");
+      else if(submit == true && checkedValue.length == 0) {
+        alert("New Manufacturing Inquiry Form saved and submitted");
+        window.print();
+        window.close();
+      }
       else alert("New Manufacturing Inquiry Form created and saved");
     }
   });
