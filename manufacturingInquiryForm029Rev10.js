@@ -5,7 +5,7 @@ var validEntry = {};
 var miFormID = String(window.location);
 if( miFormID.indexOf("itemID") > 0) {
   miFormID = miFormID.slice(miFormID.lastIndexOf("itemID") + 7, miFormID.indexOf("&"));
-  loadData = $.when(loadFormData(miFormID,"id"));
+  loadData = $.when(loadFormData(miFormID));
 } else miFormID = "new";
 
 $(document).ready(function(){
@@ -93,53 +93,6 @@ $("input#MIsearch").focus(function() {
   if($(this).val() == "Search Quote") $(this).val("").css("color","black");
 }).focusout(function(){
   if($(this).val().length == 0) $(this).val("Search Quote").css("color","gray");
-}).on('keydown', function(event) {
-  if(event.which == 13){
-    $.when(loadFormData($(this).val(),"QuoteNo")).done(function(xData) {
-      if($(xData.responseXML).SPFilterNode("z:row").length >= 1) {
-        if(confirm("Copy Data from " + $(xData.responseXML).SPFilterNode("z:row").attr("ows_Title") + "\n" + 
-             $(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer") + "\n" +
-             $(xData.responseXML).SPFilterNode("z:row").attr("ows_Description") + "\n" +
-             $(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer_x0020_Assembly_x0020_ID"))) {
-          connectFormData(xData,true);
-        }
-      } else {
-        alert("Quote No not found.");
-      }
-    });
-  }
-});
-
-$("input#MIcopy").click(function(){
-  if(confirm("Please make sure you have changed the Quote No. before proceeding.")) {
-    $.when(loadFormData($("input.miQuoteNo").val())).done(function(xData) {
-      if($(xData.responseXML).SPFilterNode("z:row").length >= 1) {
-        if(confirm("Quote No. " + $(xData.responseXML).SPFilterNode("z:row").attr("ows_Title") + "found.\n" + 
-            $(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer") + "\n" +
-            $(xData.responseXML).SPFilterNode("z:row").attr("ows_Description") + "\n" +
-            $(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer_x0020_Assembly_x0020_ID") + 
-            "\nWrite over this quote with current Data?")) {
-            miFormID = $(xData.responseXML).SPFilterNode("z:row").attr("ows_ID");
-            $("input#miCustomer").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer"));
-            $("input#miDescription").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Description"));
-            $("input#miAssyID").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assembly_x0020_ID"));
-            $("input#miContacts").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Contacts"));
-            $("input#miCusAssyID").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer_x0020_Assembly_x0020_ID"));
-            $("input#miCusRev").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Revision"));
-            $("input#miDate").val(dateDecipher($(xData.responseXML).SPFilterNode("z:row").attr("ows_Date")));
-            $("input#miPE").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Process_x0020_Engineer"));
-            $("input#miExpQty").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Quote_x0020_Qty"));
-            $("input#miJobType").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Job_x0020_Type"));
-
-            saveFormData(miFormID,false);
-            window.open(String(window.location).slice(0,String(window.location).lastIndexOf("itemID") + 7) + miFormID + "&");
-            window.close();
-        } 
-      } else {
-        saveFormData("new",false);  
-      }
-    });
-  }
 });
 
 $("input#MIsave").click(function() { saveFormData(miFormID,false); });
@@ -147,9 +100,7 @@ $("input#MIprint").click(function() {
   saveFormData(miFormID,true);
 });
 
-if(typeof loadData != "undefined") {
-  loadData.done(function(xData) { connectFormData(xData, false); });
-}
+connectFormData();
 
 }).on('keydown', function(event) {
     if (event.ctrlKey || event.metaKey) {
@@ -158,78 +109,86 @@ if(typeof loadData != "undefined") {
         $("input#MIsave").click();
       }
     }
-}); //End document ready
+});
 
-function findQuoteNoID() {
-
+function connectFormData() {
+if(typeof loadData != "undefined") {
+  loadData.done(function(xData) {
+    $("input.miQuoteNo").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Title")).change();
+    $("input#miCustomer").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer"));
+    $("input#miDescription").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Description"));
+    $("input#miAssyID").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assembly_x0020_ID"));
+    $("input#miContacts").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Contacts"));
+    $("input#miCusAssyID").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer_x0020_Assembly_x0020_ID"));
+    $("input#miCusRev").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Revision"));
+    $("input#miDate").val(dateDecipher($(xData.responseXML).SPFilterNode("z:row").attr("ows_Date")));
+    $("input#miPE").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Process_x0020_Engineer"));
+    $("input#miExpQty").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Quote_x0020_Qty"));
+    $("input#miJobType").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Job_x0020_Type"));
+    $("input#miPCBSize").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_PCB_x0020_Size"));
+    $("input#miPCBThickness").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_PCB_x0020_Thickness"));
+    $("input#miPanel").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Boards_x0020_per_x0020_Panel"));
+    $("input#miPCBLayers").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Number_x0020_of_x0020_Layers"));
+    $("select#miPCBFinish").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_PCB_x0020_Finish"));
+    $("select#miLandSize").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Smallest_x0020_Landpattern"));
+    $("input#miPitch").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Smallest_x0020_pitch"));
+    $("input#miSMTUP").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Unique_x0020_Parts")));
+    $("input#miSMTTopA").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Top_x0020_Auto"))).change();
+    $("input#miSMTBotA").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Bot_x0020_Auto"))).change();
+    $("input#miSMTTopM").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Top_x0020_Manual"))).change();
+    $("input#miSMTBotM").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Bot_x0020_Manual"))).change();
+    $("input#miSMTHandComp").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Hand")));
+    $("input#miSMTHandPins").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Hand_x0020_Pins")));
+    $("select#miSMTprogram").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Program"));
+    $("select#miStencilNumber").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Stencil"));
+    $("select#miStencilTopSize").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Top_x0020_Stencil_x002"));
+    $("select#miStencilTop").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Top_x0020_Stencil_x0020"));
+    $("select#miStencilBotSize").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Bot_x0020_Stencil_x002"));
+    $("select#miStencilBot").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Bot_x0020_Stencil_x0020"));
+    $("input#miSMTBGA").prop("checked",text2checkBox($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Special"),"BGA"));
+    $("input#miSMTLGA").prop("checked",text2checkBox($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Special"),"LGA"));
+    $("input#miSMTLeadless").prop("checked",text2checkBox($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Special"),"Leadless"));
+    $("input#miSMTModule").prop("checked",text2checkBox($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Special"),"Module"));
+    $("input#miSMTOtherDeviceInfo").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Others")).change();
+    $("input#miTHWave").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Wave_x0020_Solder_x0020_Parts")));
+    $("input#miTHWavePin").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Wave_x0020_Solder_x0020_Pins")));
+    $("input#miTHHand").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Hand_x0020_Solder_x0020_Parts"))).change();
+    $("input#miTHHSPin").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Hand_x0020_Solder_x0020_Pins")));
+    $("input#miTHCut").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Pin_x0020_Cutting_x0020_Parts")));
+    $("input#miTHForm").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_TH_x0020_Component_x0020_Forming")));
+    $("select#miTHSelectProgram").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Selctive_x0020_Wave_x0020_Progra"));
+    $("select#miTHWavePallet").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Wave_x0020_Pallet"));
+    $("input#miMECHMins").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Mech_x0020_Estimated_x0020_Minut")));
+    $("input#miMechGeneric").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Mech_x0020_Generic")));
+    $("input#miMechPressFit").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Mech_x0020_Press_x0020_Fits")));
+    $("input#miMechOther").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Mech_x0020_Other"))).change();
+    $("input#miTestMin").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Test_x0020_Minutes")));
+    $("select#miMod").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Modification"));
+    $("select#miCC").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Conformal_x0020_Coating"));
+    $("textarea#commentsPE").val(returnHTML($(xData.responseXML).SPFilterNode("z:row").attr("ows_Comments_x0020_from_x0020_PE")));
+  });
+  
 }
-
-function connectFormData(xData, copyQuoteTF) {
-
-if(copyQuoteTF == false) {
-  $("input.miQuoteNo").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Title")).change();
-  $("input#miCustomer").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer"));
-  $("input#miDescription").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Description"));
-  $("input#miAssyID").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assembly_x0020_ID"));
-  $("input#miContacts").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Contacts"));
-  $("input#miCusAssyID").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer_x0020_Assembly_x0020_ID"));
-  $("input#miCusRev").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Revision"));
-  $("input#miDate").val(dateDecipher($(xData.responseXML).SPFilterNode("z:row").attr("ows_Date")));
-  $("input#miPE").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Process_x0020_Engineer"));
-  $("input#miExpQty").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Quote_x0020_Qty"));
-  $("input#miJobType").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Job_x0020_Type"));
-}
-  $("input#miPCBSize").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_PCB_x0020_Size"));
-  $("input#miPCBThickness").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_PCB_x0020_Thickness"));
-  $("input#miPanel").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Boards_x0020_per_x0020_Panel"));
-  $("input#miPCBLayers").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Number_x0020_of_x0020_Layers"));
-  $("select#miPCBFinish").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_PCB_x0020_Finish"));
-  $("select#miLandSize").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Smallest_x0020_Landpattern"));
-  $("input#miPitch").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Smallest_x0020_pitch"));
-  $("input#miSMTUP").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Unique_x0020_Parts")));
-  $("input#miSMTTopA").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Top_x0020_Auto"))).change();
-  $("input#miSMTBotA").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Bot_x0020_Auto"))).change();
-  $("input#miSMTTopM").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Top_x0020_Manual"))).change();
-  $("input#miSMTBotM").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Bot_x0020_Manual"))).change();
-  $("input#miSMTHandComp").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Hand")));
-  $("input#miSMTHandPins").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Hand_x0020_Pins")));
-  $("select#miSMTprogram").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Program"));
-  $("select#miStencilNumber").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Stencil"));
-  $("select#miStencilTopSize").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Top_x0020_Stencil_x002"));
-  $("select#miStencilTop").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Top_x0020_Stencil_x0020"));
-  $("select#miStencilBotSize").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Bot_x0020_Stencil_x002"));
-  $("select#miStencilBot").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Bot_x0020_Stencil_x0020"));
-  $("input#miSMTBGA").prop("checked",text2checkBox($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Special"),"BGA"));
-  $("input#miSMTLGA").prop("checked",text2checkBox($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Special"),"LGA"));
-  $("input#miSMTLeadless").prop("checked",text2checkBox($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Special"),"Leadless"));
-  $("input#miSMTModule").prop("checked",text2checkBox($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Special"),"Module"));
-  $("input#miSMTOtherDeviceInfo").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x0020_Others")).change();
-  $("input#miTHWave").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Wave_x0020_Solder_x0020_Parts")));
-  $("input#miTHWavePin").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Wave_x0020_Solder_x0020_Pins")));
-  $("input#miTHHand").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Hand_x0020_Solder_x0020_Parts"))).change();
-  $("input#miTHHSPin").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Hand_x0020_Solder_x0020_Pins")));
-  $("input#miTHCut").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Pin_x0020_Cutting_x0020_Parts")));
-  $("input#miTHForm").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_TH_x0020_Component_x0020_Forming")));
-  $("select#miTHSelectProgram").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Selctive_x0020_Wave_x0020_Progra"));
-  $("select#miTHWavePallet").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Wave_x0020_Pallet"));
-  $("input#miMECHMins").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Mech_x0020_Estimated_x0020_Minut")));
-  $("input#miMechGeneric").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Mech_x0020_Generic")));
-  $("input#miMechPressFit").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Mech_x0020_Press_x0020_Fits")));
-  $("input#miMechOther").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Mech_x0020_Other"))).change();
-  $("input#miTestMin").val(intConvert($(xData.responseXML).SPFilterNode("z:row").attr("ows_Test_x0020_Minutes")));
-  $("select#miMod").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Modification"));
-  $("select#miCC").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Conformal_x0020_Coating"));
-  $("textarea#commentsPE").val(returnHTML($(xData.responseXML).SPFilterNode("z:row").attr("ows_Comments_x0020_from_x0020_PE")));
 
 //convert SharePoint textbox to readable HTML
 function returnHTML(s) { return typeof(s) != "string"?"":s.replace(/<[^\>]*>/g,"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&lt;/g,"<").replace(/&gt;/g,">"); }
 
+  //Private function to convert SP date to normal date
+  function dateDecipher(n) {
+    if(typeof n != "undefined") {
+      return n.substr(5,2) + "/" + n.substr(8,2) + "/" + n.substr(2,2);      
+    } else {
+      var now = new Date();
+      now = (now.getMonth()<10?"0":"") + (now.getMonth() + 1) + "/" + (now.getDate()<10?"0":"") + now.getDate() + "/" + now.getFullYear();
+      now = now.substr(0,6) + now.substr(8,2);
+      return now;  
+    }
+  }//End dateDecipher
 } //End connectFormData
 
-function loadFormData(miSearchTerm,idOrQuoteNo) {
+function loadFormData(miFormID) {
 var dfd = $.Deferred();
-if(idOrQuoteNo == "id") myQuery = "<Query><Where><Eq><FieldRef Name='ID' /><Value Type='Integer'>" + miSearchTerm + "</Value></Eq></Where></Query>";
-else myQuery = "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + miSearchTerm + "</Value></Eq></Where></Query>";
+myQuery = "<Query><Where><Eq><FieldRef Name='ID' /><Value Type='Integer'>" + miFormID + "</Value></Eq></Where></Query>";
 
 $().SPServices({
   operation: "GetListItems",
@@ -445,14 +404,3 @@ function validCheck() {
   for(var temp2 in validEntry) if(validEntry[temp2] == false) temp1.push(temp2);
   return temp1;
 } //End validCheck
-
-function dateDecipher(n) {
-  if(typeof n != "undefined") {
-    return n.substr(5,2) + "/" + n.substr(8,2) + "/" + n.substr(2,2);      
-  } else {
-    var now = new Date();
-    now = (now.getMonth()<10?"0":"") + (now.getMonth() + 1) + "/" + (now.getDate()<10?"0":"") + now.getDate() + "/" + now.getFullYear();
-    now = now.substr(0,6) + now.substr(8,2);
-    return now;  
-  }
-}//End dateDecipher
