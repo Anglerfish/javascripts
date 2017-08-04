@@ -161,11 +161,8 @@ if(typeof loadData != "undefined") {
     }
 }); //End document ready
 
-function findQuoteNoID() {
-
-}
-
 function connectFormData(xData, copyQuoteTF) {
+var tempConnectFormVar;
 
 if(copyQuoteTF == false) {
   $("input.miQuoteNo").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Title")).change();
@@ -173,8 +170,30 @@ if(copyQuoteTF == false) {
   $("input#miDescription").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Description"));
   $("input#miAssyID").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Dorigo_x0020_Assembly_x0020_ID"));
   $("input#miContacts").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Contacts"));
-  $("input#miCusAssyID").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer_x0020_Assembly_x0020_ID"));
-  $("input#miCusRev").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Revision"));
+  tempConnectFormVar = $(xData.responseXML).SPFilterNode("z:row").attr("ows_Customer_x0020_Assembly_x0020_ID");
+  if(typeof tempConnectFormVar != "undefined"){
+    if(typeof $(xData.responseXML).SPFilterNode("z:row").attr("ows_Revision") != "undefined") {
+      $("input#miCusRev").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Revision"));
+      $("input#miCusAssyID").val(
+        tempConnectFormVar.slice(0,tempConnectFormVar.indexOf(", Rev " + $(xData.responseXML).SPFilterNode("z:row").attr("ows_Revision"))));
+    } else {
+      if(tempConnectFormVar.toLowerCase().indexOf(", rev.") != -1){
+        $("input#miCusRev").val(clearFrontSpace(tempConnectFormVar.substring(tempConnectFormVar.toLowerCase().indexOf(", rev.") + 6)));
+        $("input#miCusAssyID").val(tempConnectFormVar.slice(0,tempConnectFormVar.toLowerCase().indexOf(", rev.")));
+      } else if(tempConnectFormVar.toLowerCase().indexOf(", rev") != -1){
+        $("input#miCusRev").val(clearFrontSpace(tempConnectFormVar.substring(tempConnectFormVar.toLowerCase().indexOf(", rev") + 5)));
+        $("input#miCusAssyID").val(tempConnectFormVar.slice(0,tempConnectFormVar.toLowerCase().indexOf(", rev")));
+      } else if(tempConnectFormVar.toLowerCase().indexOf(" rev.") != -1){
+        $("input#miCusRev").val(clearFrontSpace(tempConnectFormVar.substring(tempConnectFormVar.toLowerCase().indexOf(" rev.") + 5)));
+        $("input#miCusAssyID").val(tempConnectFormVar.slice(0,tempConnectFormVar.toLowerCase().indexOf(" rev.")));
+      } else if(tempConnectFormVar.toLowerCase().indexOf(" rev") != -1){
+        $("input#miCusRev").val(clearFrontSpace(tempConnectFormVar.substring(tempConnectFormVar.toLowerCase().indexOf(" rev") + 4)));
+        $("input#miCusAssyID").val(tempConnectFormVar.slice(0,tempConnectFormVar.toLowerCase().indexOf(" rev")));
+      } else {
+        $("input#miCusAssyID").val(tempConnectFormVar);
+      }
+    }
+  }
   $("input#miDate").val(dateDecipher($(xData.responseXML).SPFilterNode("z:row").attr("ows_Date")));
   $("input#miPE").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Process_x0020_Engineer"));
   $("input#miExpQty").val($(xData.responseXML).SPFilterNode("z:row").attr("ows_Quote_x0020_Qty"));
@@ -225,6 +244,8 @@ if(copyQuoteTF == false) {
 //convert SharePoint textbox to readable HTML
 function returnHTML(s) { return typeof(s) != "string"?"":s.replace(/<[^\>]*>/g,"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&lt;/g,"<").replace(/&gt;/g,">"); }
 
+function clearFrontSpace(str) { return str.substring(0,1) == " "?str.substring(1):str; }
+
 } //End connectFormData
 
 function loadFormData(miSearchTerm,idOrQuoteNo) {
@@ -255,7 +276,7 @@ var updateQuery= [["Title", $("input.miQuoteNo").val()],
   ["Description", $("input#miDescription").val()],
   ["Dorigo_x0020_Assembly_x0020_ID", $("input#miAssyID").val()],
   ["Contacts", $("input#miContacts").val()],
-  ["Customer_x0020_Assembly_x0020_ID", $("input#miCusAssyID").val()],
+  ["Customer_x0020_Assembly_x0020_ID", $("input#miCusRev").val().replace(/\s+/g,'').length > 0?($("input#miCusAssyID").val() + ", Rev " + $("input#miCusRev").val()):$("input#miCusAssyID").val()],
   ["Revision", $("input#miCusRev").val()],
   ["Process_x0020_Engineer", $("input#miPE").val()],
   ["Quote_x0020_Qty", $("input#miExpQty").val()],
