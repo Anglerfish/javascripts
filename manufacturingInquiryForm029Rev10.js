@@ -368,10 +368,12 @@ if(miFormID != "new"){
     completefunc: function(xData, Status) {
       if(submit == true && checkedValue.length != 0) alert("Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
       else if(submit == true && checkedValue.length == 0) { 
-        alert("Manufacturing Inquiry Form saved and submitted");
-        dfd.resolve();
-        window.print();
-        window.close();
+        $.when(transferData2QuotationLog()).done(function(){
+          alert("Manufacturing Inquiry Form saved and submitted");
+          dfd.resolve();
+          window.print();
+          window.close();
+        });
       }
       else {
         alert("Manufacturing Inquiry Form saved");
@@ -389,10 +391,12 @@ if(miFormID != "new"){
     completefunc: function(xData, Status) {
       if(submit == true && checkedValue.length != 0) alert("New Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
       else if(submit == true && checkedValue.length == 0) {
-        alert("New Manufacturing Inquiry Form saved and submitted");
-        dfd.resolve();
-        window.print();
-        window.close();
+        $.when(transferData2QuotationLog()).done(function(){
+          alert("New Manufacturing Inquiry Form saved and submitted");
+          dfd.resolve();
+          window.print();
+          window.close();
+        });
       }
       else {
         alert("New Manufacturing Inquiry Form created and saved");
@@ -430,10 +434,50 @@ return dfd.promise();
     return SPdate;
   }; //End SPdateConverter
   
-  //Private function to change string characters form multi-line text to SharePoint save-able text
-  function escapeHTML(s) { return typeof(s) != "string"?"":s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
 }//End saveFormData
+
+function transferData2QuotationLog(){
+  var dfd = $.Deferred();
+  var updateQuery= [["Description", $("input#miDescription").val()],
+                    ["Dorigo_x0020_Assy_x0023_", $("input#miAssyID").val()],
+                    ["Cust_x0020_Assy_x0020_ID", $("input#miCusRev").val().replace(/\s+/g,'').length > 0?($("input#miCusAssyID").val() + ", Rev " + $("input#miCusRev").val()):$("input#miCusAssyID").val()],
+                    ["Panel", $("input#miPanel").val()],
+                    ["SMD_x0020_Part_x0020_Types", $("input#miSMTUP").val()],
+                    ["SMT_x002d_T", $("div#miSMTTopTotal").text()],
+                    ["SMT_x002d_B", $("div#miSMTBotTotal").text()],
+                    ["Wave_x0020_Parts", $("input#miTHWave").val()],
+                    ["Hand_x0020_Pins", $("input#miTHHSPin").val()],
+                    ["Mech_x0020_Items", $("div#miMechHard").text()],
+                    ["Test_x0020_Mins", $("input#miTestMin").val()],
+                    ["Test_x0020_Req_x0027_d", $("input#miTestMin").val()>0?"YES":"NO"],
+                    ["Assy_x0020_Mins", $("input#miMECHMins").val()],
+                    ["Comments_x002d_Orange", escapeHTML($("textarea#commentsPE").html().replace(/[\n]/g,'<br>'))],
+                    ["PE_x0020_Complete_x003f_","Yes"]];
+  
+  $().SPServices({
+    operation: "GetListItems",
+    async: true,
+    listName: "Quotation Log",
+    CAMLViewFields: "<ViewFields><FieldRef Name='Title' /><FieldRef Name='ID' /></ViewFields>",
+    CAMLRowLimit: 1,
+    CAMLQueryOptions: myQueryOptions,
+    CAMLQuery: "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + $("input.miQuoteNo").val() + "</Value></Eq></Where></Query>",
+    completefunc: function (xData, Status) {
+      $().SPServices({
+        operation: "UpdateListItems",
+        async: true,
+        batchCmd: "Update",
+        ID: $(xData.responseXML).SPFilterNode("z:row").attr("ows_ID"),
+        listName: "Quotation Log",
+        valuepairs: updateQuery,
+        completefunc: function(xData2, Status) {
+          dfd.resolve();
+        }
+      });
+    }
+  });
+  dfd.promise();
+}//End transferData2QuotationLog
 
 function forceNum(inputL) {
 var keynum;
@@ -489,3 +533,6 @@ function dateDecipher(n) {
     return now;  
   }
 }//End dateDecipher
+
+function escapeHTML(s) { return typeof(s) != "string"?"":s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+ //function to change string characters form multi-line text to SharePoint save-able text
