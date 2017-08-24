@@ -366,18 +366,22 @@ if(miFormID != "new"){
     listName: "Manufacturing Inquiry",
     valuepairs: updateQuery,
     completefunc: function(xData, Status) {
-      if(submit == true && checkedValue.length != 0) alert("Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
-      else if(submit == true && checkedValue.length == 0) { 
-        $.when(transferData2QuotationLog()).done(function(){
-          alert("Manufacturing Inquiry Form saved and submitted");
+      if($(xData.responseXML).find("ErrorCode").text() != "0x00000000") {
+        alert("Error. DATA NOT SAVED:\n" + $(xData.responseXML).find("ErrorText").text());
+      } else {
+        if(submit == true && checkedValue.length != 0) alert("Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
+        else if(submit == true && checkedValue.length == 0) { 
+          $.when(transferData2QuotationLog()).done(function(){
+            alert("Manufacturing Inquiry Form saved and submitted");
+            dfd.resolve();
+            window.print();
+            window.close();
+          });
+        }
+        else {
+          alert("Manufacturing Inquiry Form saved");
           dfd.resolve();
-          window.print();
-          window.close();
-        });
-      }
-      else {
-        alert("Manufacturing Inquiry Form saved");
-        dfd.resolve();
+        }
       }
     }
   });
@@ -389,18 +393,22 @@ if(miFormID != "new"){
     listName: "Manufacturing Inquiry",
     valuepairs: updateQuery,
     completefunc: function(xData, Status) {
-      if(submit == true && checkedValue.length != 0) alert("New Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
-      else if(submit == true && checkedValue.length == 0) {
-        $.when(transferData2QuotationLog()).done(function(){
-          alert("New Manufacturing Inquiry Form saved and submitted");
+      if($(xData.responseXML).find("ErrorCode").text() != "0x00000000") {
+        alert("Error. DATA NOT SAVED:\n" + $(xData.responseXML).find("ErrorText").text());
+      } else {
+        if(submit == true && checkedValue.length != 0) alert("New Manufacturing Inquiry Form NOT Submitted.\nError in one or more of your Entries. Data saved.");
+        else if(submit == true && checkedValue.length == 0) {
+          $.when(transferData2QuotationLog()).done(function(){
+            alert("New Manufacturing Inquiry Form saved and submitted");
+            dfd.resolve();
+            window.print();
+            window.close();
+          });
+        }
+        else {
+          alert("New Manufacturing Inquiry Form created and saved");
           dfd.resolve();
-          window.print();
-          window.close();
-        });
-      }
-      else {
-        alert("New Manufacturing Inquiry Form created and saved");
-        dfd.resolve();
+        }
       }
     }
   });
@@ -441,7 +449,7 @@ function transferData2QuotationLog(){
   var updateQuery= [["Description", $("input#miDescription").val()],
                     ["Dorigo_x0020_Assy_x0023_", $("input#miAssyID").val()],
                     ["Cust_x0020_Assy_x0020_ID", $("input#miCusRev").val().replace(/\s+/g,'').length > 0?($("input#miCusAssyID").val() + ", Rev " + $("input#miCusRev").val()):$("input#miCusAssyID").val()],
-                    ["Panel", $("input#miPanel").val()],
+                    ["Panel", $("input#miPanel").val().replace(/\D/g,'')],
                     ["SMD_x0020_Part_x0020_Types", $("input#miSMTUP").val()],
                     ["SMT_x002d_T", $("div#miSMTTopTotal").text()],
                     ["SMT_x002d_B", $("div#miSMTBotTotal").text()],
@@ -451,18 +459,20 @@ function transferData2QuotationLog(){
                     ["Test_x0020_Mins", $("input#miTestMin").val()],
                     ["Test_x0020_Req_x0027_d", $("input#miTestMin").val()>0?"YES":"NO"],
                     ["Assy_x0020_Mins", $("input#miMECHMins").val()],
-                    ["Comments_x002d_Orange", escapeHTML($("textarea#commentsPE").html().replace(/[\n]/g,'<br>'))],
-                    ["PE_x0020_Complete_x003f_","Yes"]];
+                    ["Comments_x002d_Orange", escapeHTML($("textarea#commentsPE").html().replace(/[\n]/g,'<br>'))]];
   
   $().SPServices({
     operation: "GetListItems",
     async: true,
     listName: "Quotation Log",
-    CAMLViewFields: "<ViewFields><FieldRef Name='Title' /><FieldRef Name='ID' /></ViewFields>",
+    CAMLViewFields: "<ViewFields><FieldRef Name='Title' /><FieldRef Name='ID' /><FieldRef Name='PE_x0020_Complete_x003f_' /></ViewFields>",
     CAMLRowLimit: 1,
     CAMLQueryOptions: myQueryOptions,
     CAMLQuery: "<Query><Where><Eq><FieldRef Name='Title' /><Value Type='Text'>" + $("input.miQuoteNo").val() + "</Value></Eq></Where></Query>",
     completefunc: function (xData, Status) {
+      if($(xData.responseXML).SPFilterNode("z:row").attr("ows_PE_x0020_Complete_x003f_")!="Yes") {
+        updateQuery.push(["PE_x0020_Complete_x003f_","SendEmail"]);
+      }
       $().SPServices({
         operation: "UpdateListItems",
         async: true,
@@ -471,7 +481,11 @@ function transferData2QuotationLog(){
         listName: "Quotation Log",
         valuepairs: updateQuery,
         completefunc: function(xData2, Status) {
-          dfd.resolve();
+          if($(xData2.responseXML).find("ErrorCode").text() != "0x00000000") {
+            alert("Error. DATA NOT SAVED:\n" + $(xData2.responseXML).find("ErrorText").text());
+          } else {
+            dfd.resolve();
+          }
         }
       });
     }
