@@ -19,6 +19,9 @@ function findJobData(jobNo) {
   var totalQty = 0;
   var totalScrap = 0;
   var tableSum = [];
+  var tableTotalHenning = [0,0];
+  tableTotalDawson = [0,0];
+  tableTotalRework = [0,0]; //Sum for Henning, Dawson, and Rework
   var tableSumSize;
   $("table#dataTable").remove();
   $.when(getE2JobCode(jobNo)).done(function(data){
@@ -34,14 +37,14 @@ function findJobData(jobNo) {
             if(i == tableSum.length) { 
               tableSum[i] = [temp1[0],
                              parseFloat($(this).children("td.hours").text()),
-                             "<li>" + $(this).children("td.date").text() + " " + temp1[2] + " " + $(this).children("td.qty").text() + "</li>"];
+                             "<tr><td>" + $(this).children("td.date").text() + "</td><td>" + temp1[1] + "</td><td>" + $(this).children("td.hours").text() + "hrs</td><td>" + parseInt($(this).children("td.qty").text(),10) + "pcs</td></tr>"];
               dataTable += "<tr class='e2Row" + temp1[0] + "'><td class='e2DataExpand'><a href='#'>" + temp1[0] + "</a></td><td class='e2SumDivide" + temp1[0] + "'></td><td class='e2Sum" + temp1[0] + "'></td></tr>" +
                            "<tr style='display:none;'><td class=e2Detail"  + temp1[0] +  " colspan=3></td></tr>";
             } else {
               if(tableSum[i][0] == temp1[0]) {
                 tableSumSize = 0;
                 tableSum[i][1] += parseFloat($(this).children("td.hours").text());
-                tableSum[i][2] = tableSum[i][2] +  "<li>" + $(this).children("td.date").text() + " " + temp1[2] + " " + $(this).children("td.qty").text() + "</li>";
+                tableSum[i][2] = tableSum[i][2] +  "<tr><td>" + $(this).children("td.date").text() + "</td><td>" + temp1[1] + "</td><td>" + $(this).children("td.hours").text() + "hrs</td><td>" + parseInt($(this).children("td.qty").text(),10) + "pcs</td></tr>";
               }
             }
           }
@@ -58,9 +61,24 @@ function findJobData(jobNo) {
       for (var i = 0; i < tableSum.length; i++) {
         $("td.e2Sum" + tableSum[i][0]).text(tableSum[i][1]);
         $("td.e2SumDivide" + tableSum[i][0]).text((tableSum[i][1]/totalQty*60).toFixed(2));
-        $("td.e2Detail" + tableSum[i][0]).text("<ul>" + tableSum[i][2] + "</ul>");
+        $("td.e2Detail" + tableSum[i][0]).html("<table class=e2DetailTable><tbody>" + "<tr><td>Date</td><td>Oper</td><td>Hours</td><td>Qty</td></tr>" +
+                                                tableSum[i][2] + "</tbody></table>");
+        if(tableSum[i][0] == "MACR" || tableSum[i][0] == "MACS" || tableSum[i][0] == "XRAY" || tableSum[i][0] == "PROG" ) {
+          tableTotalHenning[0] += tableSum[i][1];
+          tableTotalHenning[1] += parseFloat((tableSum[i][1]/totalQty*60));
+        } else if(tableSum[i][0] == "TOUP" || tableSum[i][0] == "REWK" || tableSum[i][0] == "BGAP"){
+          tableTotalRework[0] += tableSum[i][1];
+          tableTotalRework[1] += parseFloat((tableSum[i][1]/totalQty*60)); 
+        } else {
+          tableTotalDawson[0] += tableSum[i][1];
+          tableTotalDawson[1] += parseFloat((tableSum[i][1]/totalQty*60));
+        }
       }
-      $("table#dataTable").css({"border-collapse":"collapse"});
+      $("table#dataTable>tbody").append("<tr><td>Henning: </td><td>" + tableTotalHenning[1].toFixed(2) + "</td><td>" + tableTotalHenning[0] + 
+                                        "</td></tr><tr><td>Dawson: </td><td>" + tableTotalDawson[1].toFixed(2) + "</td><td>" + tableTotalDawson[0] +
+                                        "</td></tr><tr><td>Rework: </td><td>" + tableTotalRework[1].toFixed(2) + "</td><td>" + tableTotalRework[0] +
+                                        "</td></tr>");
+      $("table#dataTable,table.e2DetailTable").css({"border-collapse":"collapse"});
       $("table#dataTable td").css({"border":"1px grey solid","font-size":"12pt","padding":"3px"});
       $("tr#e2DataHeader td").css({"font-weight":"bold"});
       $("td.e2DataExpand").click(function() {
