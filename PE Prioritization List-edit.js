@@ -48,7 +48,9 @@ $(document).ready(function() {
 if(browseris.ie5up) $("head").append('<link href="http://server1:8086/javascripts/PE Prioritization List-edit.css" rel="stylesheet" type="text/css" />');
 else $("head").append('<link href="/javascripts/PE Prioritization List-edit.css" rel="stylesheet" type="text/css" />');
 
-$("body").append("<span id=saveStatus><table><tbody><tr><td id=loadStatus>Loading</td></tr><tr><td id=loadError></td></tr></tbody></table></span><div id=AegisOpps></div>");
+$("body").append("<span id=saveStatus><table><tbody><tr><td id=loadStatus>Loading</td></tr><tr><td id=loadError></td></tr></tbody></table></span><div id=AegisOpps></div>" +
+                 "<span id=releaseAfterClean style='display:none;'><table><tbody><tr><td id=rACTitle></td></tr><tr><td><textarea id=rACReason rows ='2'></textarea></td></tr>" +
+                 "<tr><td id=rACButtons></td></tr></tbody></table></span><div id=greyOverlay style='display:none;'></div>");
 $("span#saveStatus").hide();
 
 $("INPUT[ID$='diidIOSaveItem']").hide().parent().prepend("<input type='button' class='ms-ButtonHeightWidth saveSubmit' value='Submit'>");
@@ -116,6 +118,7 @@ var smtCheck = [false,false];
 if($("div").hasClass("routeErr")) alert("Error. Duplicate entry in Router.");
 else {
   $("span#saveStatus").show().find("td#loadStatus").text("Updating");
+  $("div#greyOverlay").show();
   if($("Input[title='Folder Released']").val() != "") {
     var routerChange = new Array;
     var smtPlacement = [false,false];
@@ -157,54 +160,15 @@ else {
         if(smtCheck[0] == false && smtCheck[1] == false) alert("Cannot have 0 or less for both 'SMT-SS Parts' and 'SMT-PS Parts' when SMT-SS and SMT-PS are both on the router.\nPlease update 'SMT-SS Parts' and 'SMT-PS Parts' to proceed.");
         else if(smtCheck[0] == false) alert("Cannot have 0 or less for 'SMT-PS Parts' when SMT-PS is on the router.\nPlease update 'SMT-PS Parts' to proceed.");
         else if(smtCheck[1] == false) alert("Cannot have 0 or less for 'SMT-SS Parts' when SMT-SS is on the router.\nPlease update 'SMT-SS Parts' to proceed.");
+        $("span#saveStatus").hide();
+        $("div#greyOverlay").hide();
       }
     } else {
       $("input[title='SMT-PS Parts']").val(smtNumber[0]);
       $("input[title='SMT-SS Parts']").val(smtNumber[1]);
     }
-
-    if(smtCheck[0] == true && smtCheck[1]== true) {
-      if(routerChange.length > 0) {
-        for( var i = 0, l = routerChange.length; i < l; i++ ) {
-          if (routerChange[i].routeNum != 1) {
-            temp1 = routerChange[i].routeNum - 1;
-            if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
-            else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
-          }
-          if (routerChange[i].route != "END") {
-            temp1 = routerChange[i].routeNum + 1;
-            if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
-            else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
-          }
-        }
-
-        $.when(routerSetup(jobNo, routerChange)).done(function(){
-          $("span#saveStatus td#loadStatus").text("Saving...");
-          setTimeout(function(){
-            $("INPUT[ID$='diidIOSaveItem']:first").click();
-          },2000);
-        });
-      } else { //No router change. Saving.
-        $.when(getSPList("Master Job List",jobNo)).done(function(masterData) {
-          var deferreds = [];
-          var changesSMT = new Array();
-          var jobVals = readFields();
-
-          if(typeof $(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_T") != "undefined") {
-            if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_T"),10) != jobVals.SMT_x002d_PS) changesSMT.push(["SMT_x002d_T",jobVals.SMT_x002d_PS]);
-          }
-          if(typeof $(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B") != "undefined") {
-            if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B"),10) != jobVals.SMT_x002d_SS) changesSMT.push(["SMT_x002d_B",jobVals.SMT_x002d_SS]);
-          }
-
-          if (changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
-          $.when.apply($,deferreds).done(function(){
-            $("span#saveStatus td#loadStatus").text("Saving...");
-            $("INPUT[ID$='diidIOSaveItem']:first").click();
-          });
-        });        
-      }
-    } else $("span#saveStatus").hide(); //SMT incorrect. Stops user from saving.
+    
+    rACCheckb4Submit(routerChange, smtCheck);  
   } else{  //folder not released
     $("span#saveStatus td#loadStatus").text("Saving...");
     $("INPUT[ID$='diidIOSaveItem']:first").click();
@@ -217,6 +181,54 @@ else {
 });
 };//End Function PE Prioritization List
 
+function transferSaveData(routerChange, smtCheck){
+  var temp1;
+  if(smtCheck[0] == true && smtCheck[1]== true) {
+    if(routerChange.length > 0) {
+      for( var i = 0, l = routerChange.length; i < l; i++ ) {
+        if (routerChange[i].routeNum != 1) {
+          temp1 = routerChange[i].routeNum - 1;
+          if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
+          else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
+        }
+        if (routerChange[i].route != "END") {
+          temp1 = routerChange[i].routeNum + 1;
+          if(temp1 < 10) routerChange.push({routeNum:temp1 ,route:$("select[title='Route 0" + temp1 + "']").val()});
+          else routerChange.push({routeNum:temp1 ,route:$("select[title='Route " + temp1 + "']").val()});
+        }
+      }
+  
+      $.when(routerSetup(jobNo, routerChange)).done(function(){
+        $("span#saveStatus td#loadStatus").text("Saving...");
+        setTimeout(function(){
+          $("INPUT[ID$='diidIOSaveItem']:first").click();
+        },2000);
+      });
+    } else { //No router change. Saving.
+      $.when(getSPList("Master Job List",jobNo)).done(function(masterData) {
+        var deferreds = [];
+        var changesSMT = new Array();
+        var jobVals = readFields();
+  
+        if(typeof $(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_T") != "undefined") {
+          if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_T"),10) != jobVals.SMT_x002d_PS) changesSMT.push(["SMT_x002d_T",jobVals.SMT_x002d_PS]);
+        }
+        if(typeof $(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B") != "undefined") {
+          if(parseInt($(masterData.responseXML).SPFilterNode("z:row").attr("ows_SMT_x002d_B"),10) != jobVals.SMT_x002d_SS) changesSMT.push(["SMT_x002d_B",jobVals.SMT_x002d_SS]);
+        }
+  
+        if (changesSMT.length > 0) deferreds.push(updateSPList("Master Job List",$(masterData.responseXML).SPFilterNode("z:row").attr("ows_ID"),changesSMT));
+        $.when.apply($,deferreds).done(function(){
+          $("span#saveStatus td#loadStatus").text("Saving...");
+          $("INPUT[ID$='diidIOSaveItem']:first").click();
+        });
+      });        
+    }
+  } else {
+    $("span#saveStatus").hide(); //SMT incorrect. Stops user from saving.
+    $("div#greyOverlay").hide();
+  }
+} //End transferSaveData
 
 function folderLabel(jobNo) {
 
@@ -817,3 +829,29 @@ routePropVal.push(["Qty",$(masterData.responseXML).SPFilterNode("z:row").attr("o
 
 return routePropVal;
 };
+
+function rACCheckb4Submit(routerChange, smtCheck) {
+  //if(true) {
+  if(originVals["Clean_x003f_"] != "" && originVals["Printed"] != "" && $("input[title='Folder Released']").val() != "") {
+    $("td#rACTitle").text("Kit Status is " + originVals["Clean_x003f_"] + ". Please advise cause for folder release after kit release:");
+    $("td#rACButtons").html("<button type='button' id=rACSubmit>Submit</button>&nbsp;&nbsp;<button type='button' id=rACCancel>Cancel</button>");
+    $("span#releaseAfterClean").show().find("textarea#rACReason").focus(); 
+    $("button#rACSubmit").click(function(){
+      if($("textarea#rACReason").val() == "") alert("Entry required. Please specify reason.");
+      else {
+        $("textarea[title='Release after clean']").val($("textarea#rACReason").val());
+        $("span#releaseAfterClean").hide();
+        transferSaveData(routerChange, smtCheck);
+      }
+    });
+    $("button#rACCancel").click(function(){
+      $("td#rACButtons").html("");
+      $("span#releaseAfterClean").hide();
+      $("span#saveStatus").hide();
+      $("div#greyOverlay").hide();
+    });
+  } else {
+    transferSaveData(routerChange, smtCheck); 
+  }
+
+}  //End rACCheck
