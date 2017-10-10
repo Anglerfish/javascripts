@@ -1,8 +1,9 @@
-﻿function readFields() {
+function readFields() {
 //read all fields in editForm and output as an object
 var output = {};
 var fieldName;
 var result;
+var readError = false;
 
 $("table.ms-formtable>tbody>tr").each(function(){
   result = "";
@@ -40,6 +41,11 @@ $("table.ms-formtable>tbody>tr").each(function(){
           result += " " + temp1 + ":" + $(this).find("select[id$='DateTimeField_DateTimeFieldDateMinutes']").val();
         }
           result = SPdateConverter(result);
+
+          if(result == "error") {
+            $(this).find("input").css("color","red");
+            readError = true;
+          }
       break;
       default:
         result = temp;
@@ -47,6 +53,10 @@ $("table.ms-formtable>tbody>tr").each(function(){
     output[findfield("FieldInternalName",$(this).find("td:nth-child(2)").html())] = result;
   }
 });
+
+if(readError == true) {
+  output = "error";
+}
 
 return output;
 
@@ -60,7 +70,9 @@ return output;
   function SPdateConverter( n ) {
     var SPdate = "";
     var d = new Date(n);
-    if ( Object.prototype.toString.call(d) === "[object Date]" ) {
+    if (!isNaN(d.valueOf())) {
+      //alert(isNaN(d.valueOf()));
+      
       if (!isNaN(d.getTime())) {
         d = d.setHours(d.getHours()- d.getTimezoneOffset()/60);
         d = new Date(d);
@@ -77,6 +89,9 @@ return output;
         pad( d.getUTCMinutes() )+':' + 
         pad( d.getUTCSeconds() )+'Z';
       }
+    } else if (n != "") {
+      alert("Date Error");
+      SPdate = "error";
     }
     function pad( n ) { return n < 10 ? '0' + n : n; }
     return SPdate;

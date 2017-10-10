@@ -108,8 +108,12 @@ $("input[title='Dorigo Assy ID']").focusout(function(){
 function loadSubmit(originVal,saveSubmit){
 if(!browseris.ie5up) { for(var i in CKEDITOR.instances) { CKEDITOR.instances[i].updateElement();} }
 var changeVal = readFields();
-var jobNo = changeVal.Title;
+
 //  console.log(jobNo + "start");
+
+if(changeVal != "error") {
+var jobNo = changeVal.Title;
+
 
 if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
     
@@ -160,6 +164,10 @@ if(jobNo != "TBD" && jobNo.indexOf("-Copy") < 0) {
     });
 } else {
   if(saveSubmit == true) { $("INPUT[ID$='diidIOSaveItem']:first").click();}
+}
+
+} else {
+  alert("Error in one of the date fields");
 }
 
 //internal function to update Master Assembly List if ncessary
@@ -511,7 +519,7 @@ function flagChecker(assyID){
       } else {
         $(this).text("v").css("background-color","red");
         $("td.flagText, td.flagTitle").show();
-        $("table#flagChecker").css("background-color","steelBlue");
+        $("table#flagChecker").css("background-color","red");
       }
     });
     
@@ -533,10 +541,45 @@ function flagChecker(assyID){
           $("td#opFlagText").html($(xData.responseXML).SPFilterNode("z:row").attr("ows_Operations_x0020_Flag"));
           if(($("td#engFlagText").text().replace(/\s+/g,'').length + $("td#opFlagText").text().replace(/\s+/g,'').length)== 0) {
             $("span#flagMinimizer").click();
+          } else {
+            unicornAttack(5);
           }
+
         }
 
       }
     });
   }    
 } //End flagChecker
+
+function unicornAttack(unicornNumTotal) {
+  var unicornLeft =[];
+  var unicornFin = [];
+  var uSpeed = [];
+  for (var unicornNum = 0; unicornNum < unicornNumTotal; unicornNum++) {
+    $("body").append("<img id='unicorn" + unicornNum + "L' alt='Woof!' src='/images/giphyLeft.gif' style='position:absolute; top:100%; left:2000px; height: 100px; display:none;'/><img id='unicorn" + unicornNum + "R' alt='Woof!' src='/images/giphyRight.gif' style='position:absolute; top:100%; left:2000px; height: 100px; display:none;'/>");
+    $("img#unicorn" + unicornNum + "L").css("position","absolute");
+    $("img#unicorn" + unicornNum + "R").css("position","absolute");
+    unicornLeft[unicornNum] = $(window).width()*Math.random();
+    unicornFin[unicornNum] = $(window).width()-150;
+    uSpeed[unicornNum] = Math.random()*30;
+  };
+  setInterval(function() {
+    for(var unicornNum = 0; unicornNum < unicornNumTotal; unicornNum++) {
+      if((unicornFin[unicornNum]-unicornLeft[unicornNum]) > 0 ) {
+        $("img#unicorn" + unicornNum + "L").hide();
+        $("img#unicorn" + unicornNum + "R").css({"top": $("table#flagChecker").position().top - 100,"left": unicornLeft[unicornNum]}).show();
+        unicornFin[unicornNum] = $(window).width()-150;
+        unicornLeft[unicornNum] += uSpeed[unicornNum];
+      } else if((unicornFin[unicornNum]-unicornLeft[unicornNum]) < 0 ){
+        $("img#unicorn" + unicornNum + "R").hide();
+        $("img#unicorn" + unicornNum + "L").css({"top": $("table#flagChecker").position().top - 100,"left": unicornLeft[unicornNum]}).show();
+        unicornLeft[unicornNum] -= uSpeed[unicornNum];
+        unicornFin[unicornNum] = 0;
+      } else {
+        unicornFin[unicornNum] = 0;
+      }
+      if((unicornFin[unicornNum] - unicornLeft[unicornNum]) >= 30) uSpeed[unicornNum] = Math.random()*30;
+    }
+  },100);
+}
